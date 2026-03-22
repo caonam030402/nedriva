@@ -11,7 +11,6 @@ import {
   planPayerTypeFromClerkBillingPayer,
   resolveBillingSlugsFromLineItems,
 } from '@/libs/persistence/billing/planCatalog';
-import { tryAwardReferrerSubscriptionBonus } from '@/libs/persistence/users/tryAwardReferrerSubscriptionBonus';
 import { userSubscriptionCapabilities } from '@/models/Schema';
 
 type SubscriptionData = BillingSubscriptionWebhookEvent['data'];
@@ -133,7 +132,4 @@ export async function syncUserEntitlementsFromSubscription(data: SubscriptionDat
       },
     });
 
-  if (shouldMergeEntitlements && caps.monthlyCreditAllowance > 0) {
-    await tryAwardReferrerSubscriptionBonus(userId, caps.monthlyCreditAllowance);
-  }
 }

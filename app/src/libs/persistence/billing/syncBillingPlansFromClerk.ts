@@ -107,6 +107,12 @@ async function upsertOneClerkPlan(executor: DbExecutor, plan: BillingPlan): Prom
   const snapshot = planToSnapshot(plan);
   const featureIds = catalogFeatureIdsFromClerkPlan(plan);
 
+  // Extract prices (amount from Clerk is in cents; store in USD)
+  const monthlyPriceUsd =
+    plan.fee?.currency === 'USD' ? Number((plan.fee.amount / 100).toFixed(2)) : null;
+  const annualPriceUsd =
+    plan.annualFee?.currency === 'USD' ? Number((plan.annualFee.amount / 100).toFixed(2)) : null;
+
   for (const f of plan.features ?? []) {
     if (catalogFeatureIdFromClerkFeatureSlug(f.slug) == null) {
       logger.debug('Clerk plan feature slug not mapped to features catalog', {
@@ -125,11 +131,15 @@ async function upsertOneClerkPlan(executor: DbExecutor, plan: BillingPlan): Prom
         payerType,
         clerkSlug,
         name,
+        monthlyPriceUsd,
+        annualPriceUsd,
       })
       .onConflictDoUpdate({
         target: [plans.clerkSlug, plans.payerType],
         set: {
           name,
+          monthlyPriceUsd,
+          annualPriceUsd,
           updatedAt: new Date(),
         },
       })
@@ -180,7 +190,7 @@ async function upsertOneClerkPlan(executor: DbExecutor, plan: BillingPlan): Prom
 
 /**
  * Pull Clerk Billing (`billing.getPlanList` × user + org) → `plans` + `plan_benefits` + `plan_features`.
- * When a plan already exists, keep `plan_benefits` credits/limits; only update `clerk_plan_id` + snapshot.
+ * When a plan already exists, keep `plan_benefits` credits/limits; update `clerk_plan_id` + snapshot; prices live on `plans`.
  * @param executor - DB or transaction for catalog writes.
  */
 export async function syncBillingPlansFromClerk(

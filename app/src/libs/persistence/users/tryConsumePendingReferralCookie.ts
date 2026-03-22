@@ -6,9 +6,6 @@ import {
 } from '@/constants/referral';
 import { db } from '@/libs/core/DB';
 import { logger } from '@/libs/core/Logger';
-import {
-  tryAwardReferrerFromStoredSubscriptionCapabilities,
-} from '@/libs/persistence/users/tryAwardReferrerSubscriptionBonus';
 import { users } from '@/models/Schema';
 
 function normalizeRefCode(raw: string): string | null {
@@ -84,6 +81,5 @@ export async function tryConsumePendingReferralCookie(inviteeUserId: string): Pr
       referrerUserId: referrer.id,
       perPerson,
     });
-    await tryAwardReferrerFromStoredSubscriptionCapabilities(inviteeUserId);
   }
 }

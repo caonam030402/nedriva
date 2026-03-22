@@ -11,14 +11,15 @@ type Props = {
 
 export const InfoTooltip = (props: Props) => (
   <Tooltip.Root delay={0} closeDelay={0}>
-    <Tooltip.Trigger>
-      <button
-        type="button"
+    <Tooltip.Trigger as="span">
+      <span
+        role="button"
+        tabIndex={0}
         aria-label="More info"
         className="flex cursor-default items-center text-white/30 transition-colors hover:text-white/60"
       >
         <Info size={props.size ?? 13} />
-      </button>
+      </span>
     </Tooltip.Trigger>
     <Tooltip.Content
       showArrow

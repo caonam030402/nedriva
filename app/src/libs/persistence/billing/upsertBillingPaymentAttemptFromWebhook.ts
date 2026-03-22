@@ -1,6 +1,7 @@
 import type { BillingPaymentAttemptWebhookEvent } from '@clerk/backend';
 import { db } from '@/libs/core/DB';
 import { applyPaidPaymentAttemptCreditsIfNeeded } from '@/libs/persistence/billing/applyPaidPaymentAttemptCreditsIfNeeded';
+import { applyReferralSubscriptionBonusFromPaymentAttempt } from '@/libs/persistence/users/applyReferralSubscriptionBonusFromPaymentAttempt';
 import { clerkUnixToDate } from '@/libs/persistence/billing/clerkBillingDates';
 import { paymentAttempts } from '@/models/Schema';
 
@@ -65,4 +66,7 @@ export async function upsertBillingPaymentAttemptFromWebhook(
     });
 
   await applyPaidPaymentAttemptCreditsIfNeeded(data);
+
+  // Referral USD bonus: % of invitee `totals.grand_total` (stored as `invitee_paid_total_usd`).
+  await applyReferralSubscriptionBonusFromPaymentAttempt(data);
 }

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { CopyReferralLinkButton } from '@/components/referral/CopyReferralLinkButton';
+import { ReferralStatsPanel } from '@/components/referral/ReferralStatsPanel';
 import { Link } from '@/libs/i18n/I18nNavigation';
 
 type Labels = {
@@ -26,6 +27,24 @@ type Labels = {
   statsPanelLabel: string;
   affiliateProgramLink: string;
   affiliateProgramHref: string;
+  statClickHintCredit: string;
+  statClickHintPaid: string;
+  modalTitle: string;
+  modalTabCredit: string;
+  modalTabPaid: string;
+  modalColEmail: string;
+  modalColTime: string;
+  modalColCredits: string;
+  modalColInviteePaidTotalUsd: string;
+  modalColUsdEarned: string;
+  modalColBonusPercent: string;
+  modalBasisUnknown: string;
+  modalCreditsUnitHint: string;
+  modalEmptyCredit: string;
+  modalEmptyPaid: string;
+  modalPaidNote: string;
+  modalLoadError: string;
+  modalLoading: string;
 };
 
 type Props = {
@@ -109,23 +128,6 @@ function RewardTierCard(props: {
           <p className="text-xs leading-snug text-muted">{footer ?? '\u00A0'}</p>
         </div>
       </div>
-    </div>
-  );
-}
-
-function ReferralStatBlock(props: {
-  label: string;
-  value: number;
-  description: string;
-}) {
-  const { label, value, description } = props;
-  return (
-    <div className="flex h-full flex-col rounded-xl border border-white/10 bg-black/30 px-4 py-3.5">
-      <p className="text-[10px] font-semibold tracking-wider text-subtle uppercase">{label}</p>
-      <p className="mt-1.5 text-3xl font-bold tracking-tight text-foreground tabular-nums">
-        {value}
-      </p>
-      <p className="mt-2 flex-1 text-xs leading-snug text-muted sm:min-h-10">{description}</p>
     </div>
   );
 }
@@ -355,31 +357,48 @@ export function InviteReferralExperience(props: Props) {
               aria-hidden
             />
 
-            <div className="space-y-4">
-              <p className="text-[10px] font-semibold tracking-widest text-subtle uppercase">
-                {labels.statsPanelLabel}
-              </p>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <ReferralStatBlock
-                  label={labels.statInvitesSuffix}
-                  value={inviteCount}
-                  description={
-                    inviteCount > 0 ? labels.statFriendsJoined : labels.statFriendsZero
-                  }
-                />
-                <ReferralStatBlock
-                  label={labels.statClicksSuffix}
-                  value={linkClickCount}
-                  description={labels.statClicksCaption}
-                />
-                <ReferralStatBlock
-                  label={labels.statSubsLabel}
-                  value={subscriptionBonusCount}
-                  description={labels.statSubsSuffix}
-                />
-              </div>
-              <p className="text-center text-xs text-subtle sm:text-left">{labels.shareHint}</p>
-            </div>
+            <ReferralStatsPanel
+              inviteCount={inviteCount}
+              linkClickCount={linkClickCount}
+              subscriptionBonusCount={subscriptionBonusCount}
+              subscriptionBonusPercent={subscriptionBonusPercent}
+              labels={{
+                statsPanelLabel: labels.statsPanelLabel,
+                statInvitesSuffix: labels.statInvitesSuffix,
+                statFriendsJoined: labels.statFriendsJoined,
+                statFriendsZero: labels.statFriendsZero,
+                statClicksSuffix: labels.statClicksSuffix,
+                statClicksCaption: labels.statClicksCaption,
+                statSubsLabel: labels.statSubsLabel,
+                statSubsSuffix: labels.statSubsSuffix,
+                shareHint: labels.shareHint,
+                statClickHintCredit: labels.statClickHintCredit,
+                statClickHintPaid: labels.statClickHintPaid,
+              }}
+              modalCopy={{
+                title: labels.modalTitle,
+                tabCredit: labels.modalTabCredit,
+                tabPaid: labels.modalTabPaid,
+                creditTable: {
+                  email: labels.modalColEmail,
+                  time: labels.modalColTime,
+                  credits: labels.modalColCredits,
+                  empty: labels.modalEmptyCredit,
+                },
+                paidBonusesTable: {
+                  email: labels.modalColEmail,
+                  time: labels.modalColTime,
+                  inviteePaidTotalUsd: labels.modalColInviteePaidTotalUsd,
+                  bonusPercent: labels.modalColBonusPercent,
+                  usdEarned: labels.modalColUsdEarned,
+                  empty: labels.modalEmptyPaid,
+                  basisUnknown: labels.modalBasisUnknown,
+                },
+                paidNote: labels.modalPaidNote,
+                loadError: labels.modalLoadError,
+                loading: labels.modalLoading,
+              }}
+            />
           </div>
         </div>
 

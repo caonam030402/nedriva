@@ -4,13 +4,20 @@ export const PENDING_REFERRAL_COOKIE = 'pending_referral_code' as const;
 /** Cookie lifetime for pending referral code (days) — keep in sync with `PendingReferralCookieSetter`. */
 export const PENDING_REFERRAL_COOKIE_MAX_AGE_DAYS = 30;
 
-/** Credits each (referrer + invitee) when the invitee email is a “consumer” domain (gmail, …). */
+/** Credits each (referrer + invitee) when the invitee email is a "consumer" domain (gmail, …). */
 export const REFERRAL_CREDITS_CONSUMER_EMAIL = 5;
 
 /** Credits each when the invitee email looks like a work email (domain not in consumer list). */
 export const REFERRAL_CREDITS_BUSINESS_EMAIL = 10;
 
-/** % of paid-plan monthly credits (monthlyCreditAllowance) for the referrer when invitee activates an active subscription (once per invitee). */
+/**
+ * Percent of the invitee's **actual paid invoice amount (USD)** for the referrer's one-time bonus
+ * (rounded to cents). No enhancer credits are granted for this bonus.
+ *
+ * **Source of truth for payout math** — see `applyReferralSubscriptionBonusFromPaymentAttempt` and
+ * `GET /api/referrals/me/activity`. Not stored per DB row; change here to affect new calculations
+ * (and activity display when `invitee_paid_total_usd` is set).
+ */
 export const REFERRAL_SUBSCRIPTION_BONUS_PERCENT = 30;
 
 const CONSUMER_EMAIL_DOMAINS = new Set([
@@ -38,7 +45,7 @@ const CONSUMER_EMAIL_DOMAINS = new Set([
 ]);
 
 /**
- * “Consumer” email (lower bonus). Missing email → treat as consumer (safe default).
+ * "Consumer" email (lower bonus). Missing email → treat as consumer (safe default).
  */
 export function isConsumerEmailDomain(email: string | null | undefined): boolean {
   if (email == null) {

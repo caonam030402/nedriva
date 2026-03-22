@@ -127,6 +127,55 @@
       "when": 1775500000000,
       "tag": "0017_affiliates_table",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1775600000000,
+      "tag": "0018_referral_bonus_percent_basis",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1775700000000,
+      "tag": "0019_plan_prices",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1775800000000,
+      "tag": "0020_plan_table_prices",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1775900000000,
+      "tag": "0021_plan_prices_rename_to_usd",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1776000000000,
+      "tag": "0022_referral_bonus_usd",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1776100000000,
+      "tag": "0023_referral_bonus_invitee_paid_total",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1776200000000,
+      "tag": "0024_referral_bonus_drop_percent_basis",
+      "breakpoints": true
     }
   ]
 }

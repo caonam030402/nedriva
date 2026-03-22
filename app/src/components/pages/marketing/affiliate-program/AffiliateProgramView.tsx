@@ -5,6 +5,7 @@ import {
   PENDING_REFERRAL_COOKIE_MAX_AGE_DAYS,
   REFERRAL_CREDITS_BUSINESS_EMAIL,
   REFERRAL_CREDITS_CONSUMER_EMAIL,
+  REFERRAL_SUBSCRIPTION_BONUS_PERCENT,
 } from '@/constants/referral';
 import { AffiliateProgramCopyBlock } from '@/components/pages/marketing/affiliate-program/AffiliateProgramCopyBlock';
 import { getBaseUrl, getI18nPath } from '@/utils/Helpers';
@@ -12,6 +13,8 @@ import { Routes } from '@/utils/Routes';
 
 type Props = {
   locale: string;
+  /** Flat monthly plan price (USD) used to illustrate the USD bonus in hero copy. */
+  exampleMonthlyPlanUsd?: number;
 };
 
 type FeatureIconType = 'both' | 'tier' | 'bolt' | 'link' | 'chart' | 'stack';
@@ -115,6 +118,8 @@ export async function AffiliateProgramView(props: Props) {
   const exampleSignUpUrl = `${baseUrl}${getI18nPath('/sign-up', locale)}?ref=YOUR_CODE`;
 
   const fullCopyText = t('copy_full', {
+    bonus_pct: REFERRAL_SUBSCRIPTION_BONUS_PERCENT,
+    example_monthly_usd: props.exampleMonthlyPlanUsd ?? 15,
     business: REFERRAL_CREDITS_BUSINESS_EMAIL,
     consumer: REFERRAL_CREDITS_CONSUMER_EMAIL,
     days: PENDING_REFERRAL_COOKIE_MAX_AGE_DAYS,
@@ -157,6 +162,8 @@ export async function AffiliateProgramView(props: Props) {
             </h1>
             <p className="mt-5 max-w-xl text-pretty text-base leading-relaxed text-muted sm:text-lg">
               {t('hero_subtitle', {
+                bonus_pct: REFERRAL_SUBSCRIPTION_BONUS_PERCENT,
+                example_monthly_usd: props.exampleMonthlyPlanUsd ?? 15,
                 business: REFERRAL_CREDITS_BUSINESS_EMAIL,
                 consumer: REFERRAL_CREDITS_CONSUMER_EMAIL,
               })}
@@ -250,6 +257,8 @@ export async function AffiliateProgramView(props: Props) {
                 <h3 className="font-semibold">{t(row.titleKey)}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted">
                   {t(row.descKey, {
+                    bonus_pct: REFERRAL_SUBSCRIPTION_BONUS_PERCENT,
+                    example_monthly_usd: props.exampleMonthlyPlanUsd ?? 15,
                     invite_path: inviteHref,
                     days: PENDING_REFERRAL_COOKIE_MAX_AGE_DAYS,
                     cookie: PENDING_REFERRAL_COOKIE,

@@ -1,7 +1,8 @@
 /**
  * POST /api/billing/sync-plans-from-clerk
  *
- * Pull Clerk Billing plans (`billing.getPlanList`) into `plans` + `plan_features`.
+ * Pull Clerk Billing plans (`billing.getPlanList`) into `plans` (incl. `monthly_price_usd` /
+ * `annual_price_usd` when `fee` / `annualFee` are USD, in USD not cents) + `plan_benefits` snapshot + `plan_features`.
  *
  * Headers: `Authorization: Bearer <BILLING_PLAN_SYNC_SECRET>`
  */

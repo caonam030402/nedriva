@@ -5,6 +5,7 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgEnum,
   pgTable,
   primaryKey,
@@ -74,8 +75,9 @@ export const affiliates = pgTable('affiliates', {
 });
 
 /**
- * One-time bonus for the referrer when the invitee has an active subscription (credits = % of monthly allowance).
- * PK `invitee_user_id` prevents duplicate payouts.
+ * One-time bonus for the referrer when the invitee pays (Clerk `paymentAttempt` paid).
+ * `invitee_paid_total_usd` = invoice total (USD); `bonus_amount_usd` = round(total × app % / 100).
+ * No enhancer credits. PK `invitee_user_id` prevents duplicate payouts.
  */
 export const referralSubscriptionBonuses = pgTable(
   'referral_subscription_bonuses',
@@ -86,7 +88,12 @@ export const referralSubscriptionBonuses = pgTable(
     referrerUserId: text('referrer_user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    /** Legacy: enhancer credits granted before USD-only bonuses; new rows use `0`. */
     creditsAwarded: integer('credits_awarded').notNull(),
+    /** Referrer bonus in USD (rounded to cents): % of `invitee_paid_total_usd` (see `REFERRAL_SUBSCRIPTION_BONUS_PERCENT`). */
+    bonusAmountUsd: numeric('bonus_amount_usd', { precision: 10, scale: 2 }).notNull().default('0'),
+    /** Total USD the invitee paid on the charge (basis for the %). */
+    inviteePaidTotalUsd: numeric('invitee_paid_total_usd', { precision: 10, scale: 2 }),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
       .defaultNow()
       .notNull(),
@@ -141,7 +148,7 @@ export const billingChargeTypeEnum = pgEnum('billing_charge_type', ['checkout', 
 export const planPayerTypeEnum = pgEnum('plan_payer_type', ['user', 'organization']);
 
 /**
- * Plan from Clerk: internal uuid + `clerk_slug` + `payer_type` + `name` (synced from `BillingPlan`).
+ * Plan from Clerk: internal uuid + `clerk_slug` + `payer_type` + `name` + recurring USD prices (synced from `BillingPlan`).
  */
 export const plans = pgTable(
   'plans',
@@ -150,6 +157,8 @@ export const plans = pgTable(
     payerType: planPayerTypeEnum('payer_type').notNull(),
     clerkSlug: text('clerk_slug').notNull(),
     name: varchar('name', { length: 128 }),
+    monthlyPriceUsd: numeric('monthly_price_usd', { precision: 10, scale: 2 }),
+    annualPriceUsd: numeric('annual_price_usd', { precision: 10, scale: 2 }),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
       .defaultNow()
       .notNull(),

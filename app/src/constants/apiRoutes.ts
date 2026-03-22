@@ -19,6 +19,8 @@ export const apiRoutes = {
   upload: `${API_BASE_PATH}/upload`,
   credits: `${API_BASE_PATH}/credits`,
   referralsMe: `${API_BASE_PATH}/referrals/me`,
+  /** Authenticated: sign-up credit rows + subscription bonus rows for referral dashboard modal. */
+  referralsMeActivity: `${API_BASE_PATH}/referrals/me/activity`,
   /** Authenticated: clears `pending_referral_code` (must run from client → Route Handler). */
   referralsClearPendingCookie: `${API_BASE_PATH}/referrals/clear-pending-cookie`,
   /** Public: body `{ code }` — +1 click for referrer (sign-up with `?ref=`). */
