@@ -1,97 +1,79 @@
 /**
  * POST /api/videos/upload
  *
- * Receives a video file, uploads it to R2, extracts metadata with ffprobe,
- * and stores the record in the `videos` table.
+ * Finalizes a video upload by probing metadata from R2 and updating the DB record.
+ * The raw file was uploaded directly by the browser via a presigned PUT URL
+ * (see POST /api/videos/upload-url).
  *
  * Auth: required (Clerk session)
  *
- * Body: multipart/form-data
- *   file: Blob — video file (required)
+ * Body: JSON
+ * {
+ *   videoId: string,
+ * }
  *
  * Returns:
  *   200 { videoId, inputUrl, metadata: { durationSecs, width, height, fps, sizeBytes } }
  *   400 { error: "..." }
  *   401 { error: "Unauthorized" }
- *   413 { error: "File too large" }  (max 500 MB)
- *   415 { error: "Unsupported media type" }
+ *   404 { error: "Video not found" }
  */
 import type { NextRequest } from 'next/server';
-import { randomUUID } from 'node:crypto';
 import { auth } from '@clerk/nextjs/server';
+import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/core/DB';
-import { videos } from '@/models/VideoEnhancementSchema';
-import { uploadVideoToR2, inputKey } from '@/libs/video/storage';
 import { probeVideo } from '@/libs/video/ffprobe';
-import { ensureAppUserFromCurrentClerkUser } from '@/libs/persistence/users/syncClerkAppUser';
-
-export const maxDuration = 120; // video upload can take a while
-
-const MAX_SIZE_BYTES = 500 * 1024 * 1024; // 500 MB
-const ALLOWED_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/mpeg'];
+import { videos } from '@/models/VideoEnhancementSchema';
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  await ensureAppUserFromCurrentClerkUser();
-
-  const formData = await req.formData();
-  const file = formData.get('file') as File | null;
-
-  if (!file) {
-    return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+  let body: { videoId?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  // ── Validate type ────────────────────────────────────────────
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    return NextResponse.json(
-      { error: `Unsupported media type: ${file.type}. Use MP4, WebM, MOV, AVI, or MPEG.` },
-      { status: 415 },
-    );
+  const { videoId } = body;
+  if (!videoId || typeof videoId !== 'string') {
+    return NextResponse.json({ error: 'Missing field: videoId' }, { status: 400 });
   }
 
-  // ── Validate size ────────────────────────────────────────────
-  if (file.size > MAX_SIZE_BYTES) {
-    return NextResponse.json(
-      { error: `File too large. Maximum size is 500 MB.` },
-      { status: 413 },
-    );
+  const [video] = await db
+    .select({ id: videos.id, userId: videos.userId, inputUrl: videos.inputUrl, mimeType: videos.mimeType })
+    .from(videos)
+    .where(eq(videos.id, videoId))
+    .limit(1);
+
+  if (!video) return NextResponse.json({ error: 'Video not found' }, { status: 404 });
+  if (video.userId !== userId) return NextResponse.json({ error: 'Video not found' }, { status: 404 });
+
+  // Probe metadata from R2 (download → ffprobe → discard temp file)
+  let meta: { durationSecs: number; width: number; height: number; fps: number; sizeBytes: number } | null = null;
+  try {
+    const { downloadTempFile } = await import('@/libs/video/ffprobe');
+    const tmpPath = await downloadTempFile(video.inputUrl, videoId);
+    if (tmpPath) {
+      const probed = await probeVideo(tmpPath);
+      if (probed) {
+        meta = probed;
+        const { rm } = await import('node:fs/promises');
+        await rm(tmpPath).catch(() => { /* best-effort cleanup */ });
+      }
+    }
+  } catch {
+    // ffprobe failure is non-fatal — metadata will be null
   }
 
-  const videoId = randomUUID().replace(/-/g, '').slice(0, 24);
-  const key = inputKey(userId, videoId, file.name);
-
-  // ── Upload to R2 ─────────────────────────────────────────────
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const inputUrl = await uploadVideoToR2(buffer, key, file.type);
-
-  // ── Probe metadata (non-blocking — ffprobe may be unavailable) ──
-  // Write to a temp file for ffprobe
-  const { writeFile } = await import('fs/promises');
-  const { tmpdir } = await import('os');
-  const tmpPath = `${tmpdir()}/video-probe-${videoId}.${file.name.replace(/.*\./, '')}`;
-  await writeFile(tmpPath, buffer);
-
-  const meta = await probeVideo(tmpPath);
-  const { rm } = await import('fs/promises');
-  await rm(tmpPath).catch(() => { /* best-effort cleanup */ });
-
-  // ── Persist record ───────────────────────────────────────────
-  const expiresAt = new Date(Date.now() + 7 * 24 * 3600 * 1000); // 7-day input URL validity
-
-  const [record] = await db
-    .insert(videos)
-    .values({
-      id: videoId,
-      userId,
-      originalName: file.name,
-      mimeType: file.type,
-      inputUrl,
-      inputUrlExpiresAt: expiresAt,
-      ...(meta
+  // Update record with metadata
+  await db
+    .update(videos)
+    .set(
+      meta
         ? {
             durationSecs: String(meta.durationSecs),
             width: meta.width,
@@ -99,15 +81,9 @@ export async function POST(req: NextRequest) {
             fps: String(meta.fps),
             sizeBytes: String(meta.sizeBytes),
           }
-        : {}),
-    })
-    .returning();
+        : {},
+    )
+    .where(eq(videos.id, videoId));
 
-  if (!record) throw new Error('Failed to insert video record');
-
-  return NextResponse.json({
-    videoId: record.id,
-    inputUrl: record.inputUrl,
-    metadata: meta ?? null,
-  });
+  return NextResponse.json({ videoId, inputUrl: video.inputUrl, metadata: meta });
 }

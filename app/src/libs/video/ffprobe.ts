@@ -3,21 +3,52 @@
  * Runs as a subprocess; ffprobe must be available on the host.
  */
 
-export interface VideoMetadata {
+export type VideoMetadata = {
   durationSecs: number;
   width: number;
   height: number;
   fps: number;
   sizeBytes: number;
+};
+
+/**
+ * Download a file from a remote URL to a local temp path.
+ * Returns the local path, or null on failure.
+ * @param url
+ * @param prefix
+ */
+export async function downloadTempFile(url: string, prefix: string): Promise<string | null> {
+  try {
+    const { writeFile, mkdir } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+
+    const dir = join(tmpdir(), 'nedriva-ffprobe');
+    await mkdir(dir, { recursive: true });
+
+    const filename = `${prefix}-${Date.now()}.mp4`;
+    const tmpPath = join(dir, filename);
+
+    const response = await fetch(url);
+    if (!response.ok) return null;
+
+    // eslint-disable-next-line node/prefer-global/buffer
+    const buffer = Buffer.from(await response.arrayBuffer());
+    await writeFile(tmpPath, buffer);
+    return tmpPath;
+  } catch {
+    return null;
+  }
 }
 
 /**
  * Probe a video file at `inputPath` (local path or remote URL).
  * Returns null if ffprobe is unavailable.
+ * @param inputPath
  */
 export async function probeVideo(inputPath: string): Promise<VideoMetadata | null> {
   try {
-    const { execSync } = await import('child_process');
+    const { execSync } = await import('node:child_process');
 
     // Ask ffprobe to output JSON with stream info
     const json = execSync(
@@ -38,7 +69,7 @@ export async function probeVideo(inputPath: string): Promise<VideoMetadata | nul
       }>;
     };
 
-    const videoStream = probe.streams.find(s => s.codec_type === 'video');
+    const videoStream = probe.streams.find((s) => s.codec_type === 'video');
     if (!videoStream || !probe.format) return null;
 
     const fpsStr = videoStream.r_frame_rate ?? '30/1';

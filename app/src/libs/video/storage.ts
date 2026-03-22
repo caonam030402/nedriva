@@ -6,6 +6,8 @@ const BASE_URL = process.env.STORAGE_PUBLIC_BASE_URL?.replace(/\/$/, '') ?? '';
 const BUCKET = process.env.STORAGE_BUCKET ?? '';
 const REGION = process.env.STORAGE_REGION ?? 'auto';
 const ENDPOINT = process.env.STORAGE_ENDPOINT_URL;
+const ACCESS_KEY = process.env.STORAGE_ACCESS_KEY ?? '';
+const SECRET_KEY = process.env.STORAGE_SECRET_KEY ?? '';
 
 /** S3 key for a raw input video */
 export function inputKey(userId: string, videoId: string, filename: string) {
@@ -33,7 +35,11 @@ export async function uploadVideoToR2(
 ): Promise<string> {
   const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
 
-  const client = new S3Client({ region: REGION, endpoint: ENDPOINT });
+  const client = new S3Client({
+    region: REGION,
+    endpoint: ENDPOINT,
+    credentials: { accessKeyId: ACCESS_KEY, secretAccessKey: SECRET_KEY },
+  });
 
   await client.send(
     new PutObjectCommand({
@@ -49,6 +55,36 @@ export async function uploadVideoToR2(
 }
 
 /**
+ * Generate a pre-signed PUT URL for direct browser → R2 upload.
+ * Expires after `durationSecs` (default 15 minutes).
+ */
+export async function getPresignedPutUrl(
+  key: string,
+  mimeType: string,
+  durationSecs = 900,
+): Promise<string> {
+  const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
+  const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
+
+  const client = new S3Client({
+    region: REGION,
+    endpoint: ENDPOINT,
+    credentials: { accessKeyId: ACCESS_KEY, secretAccessKey: SECRET_KEY },
+  });
+
+  return getSignedUrl(
+    client,
+    new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      ContentType: mimeType,
+      ACL: 'public-read',
+    }),
+    { expiresIn: durationSecs },
+  );
+}
+
+/**
  * Generate a pre-signed GET URL for a private output file.
  * Expires after `durationSecs` (default 1 hour).
  */
@@ -59,7 +95,11 @@ export async function getSignedResultUrl(
   const { S3Client, GetObjectCommand } = await import('@aws-sdk/client-s3');
   const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
 
-  const client = new S3Client({ region: REGION, endpoint: ENDPOINT });
+  const client = new S3Client({
+    region: REGION,
+    endpoint: ENDPOINT,
+    credentials: { accessKeyId: ACCESS_KEY, secretAccessKey: SECRET_KEY },
+  });
 
   return getSignedUrl(
     client,

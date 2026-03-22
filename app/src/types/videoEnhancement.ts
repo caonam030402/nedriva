@@ -8,7 +8,7 @@ export type VideoOutputSize = 'auto' | 'hd' | 'fhd' | '2k' | '4k';
 export type VideoOutputFormat = 'auto' | 'mp4' | 'webm' | 'mov';
 
 /** Sent in POST /api/videos/enhance */
-export interface VideoEnhanceOptions {
+export type VideoEnhanceOptions = {
   upscaleFactor: 'auto' | '2x' | '4x';
   denoise: boolean;
   deblur: boolean;
@@ -17,7 +17,7 @@ export interface VideoEnhanceOptions {
 }
 
 /** Upload response */
-export interface UploadVideoResponse {
+export type UploadVideoResponse = {
   videoId: string;
   inputUrl: string;
   metadata: {
@@ -29,8 +29,16 @@ export interface UploadVideoResponse {
   } | null;
 }
 
+/** POST /api/videos/upload-url response — presigned PUT URL for direct R2 upload */
+export type GetUploadUrlResponse = {
+  videoId: string;
+  uploadUrl: string;
+  inputUrl: string;
+  expiresAt: string;
+}
+
 /** Enhancement job response */
-export interface EnhanceVideoResponse {
+export type EnhanceVideoResponse = {
   jobId: string;
   videoId: string;
   status: VideoJobStatus;
@@ -38,7 +46,7 @@ export interface EnhanceVideoResponse {
 }
 
 /** Job status response */
-export interface VideoJobStatusResponse {
+export type VideoJobStatusResponse = {
   videoId: string;
   jobId: string;
   status: VideoJobStatus;
@@ -54,7 +62,7 @@ export interface VideoJobStatusResponse {
 }
 
 /** Result download response */
-export interface VideoResultResponse {
+export type VideoResultResponse = {
   downloadUrl?: string;
   expiresAt?: string;
   /** Returned when status is not 'done' */

@@ -14,23 +14,19 @@
  *   6. Preview + download in-page
  */
 
-import { Film, RotateCcw, X, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import type {
+  VideoEnhanceOptions,
+  VideoOutputFormat,
+  VideoOutputSize,
+} from '@/types/videoEnhancement';
+import { AlertCircle, CheckCircle2, Film, Loader2, RotateCcw, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useCallback,
-  useEffect,
-  useId,
-  useState,
-} from 'react';
+import { useCallback,  useEffect,  useId,  useRef,  useState,} from 'react';
 import { Button } from '@/components/ui/Button';
 import { DropZone } from '@/components/ui/DropZone';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import { SegmentedControl } from '@/components/ui/SegmentedControl';
 
-import type {
-  VideoOutputSize,
-  VideoOutputFormat,
-  VideoEnhanceOptions,
-} from '@/types/videoEnhancement';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { useEnhanceVideo } from '@/hooks/react-query/mutations/video/useEnhanceVideo';
 import { useUploadVideo } from '@/hooks/react-query/mutations/video/useUploadVideo';
 import { useVideoJobStatus } from '@/hooks/react-query/queries/video/useVideoJobStatus';
@@ -113,7 +109,7 @@ function ResultPlayer(props: {
       <video
         src={props.downloadUrl}
         controls
-        className="w-full max-h-[460px] rounded-xl border border-white/10 object-contain"
+        className="max-h-[460px] w-full rounded-xl border border-white/10 object-contain"
       />
 
       <a
@@ -145,12 +141,15 @@ export function VideoEnhanceWorkspace() {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadedVideoId, setUploadedVideoId] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   // ── Job state ──────────────────────────────────────────────
   const [jobId, setJobId] = useState<string | null>(null);
   const [phase, setPhase] = useState<'idle' | 'uploading' | 'queued' | 'done' | 'failed'>('idle');
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const lastProcessedStatusRef = useRef<string | null>(null);
+  const failedStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isUploading = phase === 'uploading';
   const isProcessing = phase === 'queued';
@@ -194,13 +193,26 @@ export function VideoEnhanceWorkspace() {
     if (!statusData) return;
     if (phase !== 'queued') return;
 
+    const prev = lastProcessedStatusRef.current;
+    if (prev === statusData.status) return; // already handled this status
+    lastProcessedStatusRef.current = statusData.status;
+
     if (statusData.status === 'done') {
       // Download URL fetched in the other effect
-    } else if (statusData.status === 'failed') {
-      setPhase('failed');
-      setErrorMsg(statusData.errorMessage ?? 'Processing failed');
+    } else     if (statusData.status === 'failed') {
+      failedStatusTimerRef.current = setTimeout(() => {
+        setPhase('failed');
+        setErrorMsg(statusData.errorMessage ?? 'Processing failed');
+      }, 0);
     }
   }, [statusData, phase]);
+
+  // Cleanup timeout on unmount or re-run
+  useEffect(() => {
+    return () => {
+      if (failedStatusTimerRef.current) clearTimeout(failedStatusTimerRef.current);
+    };
+  }, []);
 
   // ── File handling ───────────────────────────────────────────
   const handleFiles = useCallback((files: File[]) => {
@@ -212,6 +224,7 @@ export function VideoEnhanceWorkspace() {
     setDownloadUrl(null);
     setErrorMsg(null);
     setPhase('idle');
+    setUploadProgress(0);
 
     const url = URL.createObjectURL(next);
     setPreviewUrl(url);
@@ -226,6 +239,7 @@ export function VideoEnhanceWorkspace() {
     setDownloadUrl(null);
     setErrorMsg(null);
     setPhase('idle');
+    setUploadProgress(0);
   }, [previewUrl]);
 
   // ── Upload + Submit flow ───────────────────────────────────
@@ -235,10 +249,11 @@ export function VideoEnhanceWorkspace() {
     setErrorMsg(null);
 
     try {
-      // 1. Upload
-      const uploadFormData = new FormData();
-      uploadFormData.append('file', file);
-      const uploadRes = await uploadMutation.mutateAsync(uploadFormData);
+      // 1. Upload direct to R2 (via presigned URL) + probe metadata
+      const uploadRes = await uploadMutation.mutateAsync({
+        file,
+        onProgress: setUploadProgress,
+      });
       setUploadedVideoId(uploadRes.videoId);
 
       // 2. Submit enhancement job
@@ -356,9 +371,17 @@ export function VideoEnhanceWorkspace() {
 
               {/* Uploading state */}
               {isUploading && (
-                <div className="flex items-center justify-center gap-2 py-4 text-sm text-muted">
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
-                  Uploading video…
+                <div className="space-y-2 py-4">
+                  <div className="flex items-center justify-between text-xs text-muted">
+                    <span>Uploading to storage…</span>
+                    <span className="font-medium tabular-nums">{uploadProgress}%</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-brand transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
                 </div>
               )}
 
@@ -500,7 +523,7 @@ function EnhanceToggle(props: {
     <div className="border-b border-white/8 px-4 py-3">
       <div className="flex items-center justify-between">
         <div>
-          <label htmlFor={props.id} className="text-sm font-medium text-foreground cursor-pointer">
+          <label htmlFor={props.id} className="cursor-pointer text-sm font-medium text-foreground">
             {props.label}
           </label>
           <p className="mt-0.5 text-xs text-muted">{props.description}</p>
@@ -510,7 +533,7 @@ function EnhanceToggle(props: {
           role="switch"
           aria-checked={props.checked}
           onClick={() => props.onChange(!props.checked)}
-          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 ${
+          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:outline-none ${
             props.checked ? 'bg-brand' : 'bg-white/20'
           }`}
         >
