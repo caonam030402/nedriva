@@ -22,7 +22,7 @@ import { desc, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/core/DB';
-import { getVideoJobStatus } from '@/libs/video/videoProcessingClient';
+import { getVideoJobStatus } from '@/libs/helpers/enhancer-video/videoProcessingClient';
 import { enhancementJobs, EVideoJobStatus, videos } from '@/models/VideoEnhancementSchema';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

@@ -26,12 +26,18 @@ import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/core/DB';
-import { getPresignedPutUrl, inputKey } from '@/libs/video/storage';
+import { getPresignedPutUrl, inputKey } from '@/libs/helpers/enhancer-video/storage';
 import { videos } from '@/models/VideoEnhancementSchema';
 
 const MAX_SIZE_BYTES = 500 * 1024 * 1024; // 500 MB
 const PRESIGNED_EXPIRY_SECS = 900; // 15 minutes
-const ALLOWED_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/mpeg'];
+const ALLOWED_TYPES = [
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  'video/x-msvideo',
+  'video/mpeg',
+];
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
@@ -61,10 +67,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (sizeBytes && sizeBytes > MAX_SIZE_BYTES) {
-    return NextResponse.json(
-      { error: `File too large. Maximum size is 500 MB.` },
-      { status: 413 },
-    );
+    return NextResponse.json({ error: `File too large. Maximum size is 500 MB.` }, { status: 413 });
   }
 
   const videoId = randomUUID().replace(/-/g, '').slice(0, 24);

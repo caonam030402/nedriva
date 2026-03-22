@@ -5,7 +5,7 @@ import type {
   EScaleFactor,
   ESizeMode,
   EUpscaleModel,
-} from '@/enums/enhancer';
+} from '@/enums/enhancer-image';
 
 export type QueueItem = {
   id: string;

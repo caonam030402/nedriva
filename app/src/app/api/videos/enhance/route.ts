@@ -35,8 +35,8 @@ import { db } from '@/libs/core/DB';
 import { getUserCreditBalance } from '@/libs/persistence/users/getUserCreditBalance';
 import { ensureAppUserFromCurrentClerkUser } from '@/libs/persistence/users/syncClerkAppUser';
 import { tryDeductUserCredits } from '@/libs/persistence/users/tryDeductUserCredits';
-import { outputKey } from '@/libs/video/storage';
-import { enqueueVideoProcessing } from '@/libs/video/videoProcessingClient';
+import { outputKey } from '@/libs/helpers/enhancer-video/storage';
+import { enqueueVideoProcessing } from '@/libs/helpers/enhancer-video/videoProcessingClient';
 import {
   EEnhancementStyle,
   enhancementJobs,
@@ -102,12 +102,16 @@ export async function POST(req: NextRequest) {
     .limit(1);
 
   if (!video) return NextResponse.json({ error: 'Video not found' }, { status: 404 });
-  if (video.userId !== userId) return NextResponse.json({ error: 'Video not found' }, { status: 404 });
+  if (video.userId !== userId)
+    return NextResponse.json({ error: 'Video not found' }, { status: 404 });
 
   const creditCost = BASE_CREDIT_COST + (opts.upscaleFactor === '4x' ? UPSCALE_4X_BONUS : 0);
   const balance = await getUserCreditBalance(userId);
   if (balance < creditCost) {
-    return NextResponse.json({ error: 'Insufficient credits', needed: creditCost, balance }, { status: 402 });
+    return NextResponse.json(
+      { error: 'Insufficient credits', needed: creditCost, balance },
+      { status: 402 },
+    );
   }
 
   const deducted = await tryDeductUserCredits(userId, creditCost);

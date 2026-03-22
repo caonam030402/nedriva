@@ -39,7 +39,11 @@ Tailwind v4 utility classes. Reuse shared components. Responsive. No unnecessary
 - Locale pages: `props: { params: Promise<{ locale: string }> }` → `await props.params` → `setRequestLocale(locale)`.
 - Escape glob chars in shell commands for Next.js paths.
 - Dashboard pages (sit behind auth); define meta once in layout, not in each page.
-- **Page-scoped components** — put route/feature UI in `src/components/pages/<area>/...` (e.g. `boost/enhance-image`, `marketing`, `pricing-plans`). Keep `page.tsx` thin; import from `@/components/pages/...`. Shared pieces stay in `components/ui`, `layout`, `image`, etc.
+- **Page-scoped components** — put route/feature UI in `src/components/pages/<area>/...` (e.g. `boost/enhance-image`, `marketing`, `pricing-plans`). Keep `page.tsx` thin; import from `@/components/pages/...`.
+- **`ui/`** — Atomic primitives (Button, Input, Switch...). No app-specific business logic.
+- **`common/`** — Composed/page-level (Card, Badge, SectionHeader, TestimonialCard...). Has design tokens or business logic specific to this app.
+- **`referral/`** — Referral feature components (tables, modals, tracking).
+- Shared pieces stay in `ui/`, `common/`, `layout/`, etc.
 - Under `pages/`, mirror product areas (`pages/boost/...`, `pages/marketing/`, `pages/pricing-plans/`). Colocate hooks, constants, and small helpers when only that feature uses them.
 
 ## i18n (next-intl)

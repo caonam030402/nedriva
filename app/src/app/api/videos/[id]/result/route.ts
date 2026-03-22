@@ -23,13 +23,10 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/core/DB';
-import { getSignedResultUrl } from '@/libs/video/storage';
+import { getSignedResultUrl } from '@/libs/helpers/enhancer-video/storage';
 import { enhancementJobs, EVideoJobStatus, videos } from '@/models/VideoEnhancementSchema';
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -54,9 +51,7 @@ export async function GET(
     .orderBy(desc(enhancementJobs.createdAt))
     .limit(10);
 
-  const raw = requestedJobId
-    ? jobRows.find(j => j.id === requestedJobId)
-    : jobRows[0];
+  const raw = requestedJobId ? jobRows.find((j) => j.id === requestedJobId) : jobRows[0];
 
   if (!raw) {
     return NextResponse.json({ error: 'Job not found' }, { status: 404 });
@@ -72,10 +67,7 @@ export async function GET(
   }
 
   if (job.status === EVideoJobStatus.FAILED) {
-    return NextResponse.json(
-      { error: 'Job failed', reason: job.errorMessage },
-      { status: 422 },
-    );
+    return NextResponse.json({ error: 'Job failed', reason: job.errorMessage }, { status: 422 });
   }
 
   const outputKey = job.outputUrl ?? '';

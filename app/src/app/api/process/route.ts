@@ -13,7 +13,7 @@ import type { OpsState } from '@/types/enhancer';
 import { Buffer } from 'node:buffer';
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
-import { calcEnhancerCreditsFromOps } from '@/libs/enhancer/calcCreditsFromOps';
+import { calcEnhancerCreditsFromOps } from '@/libs/helpers/enhancer-image/calcCreditsFromOps';
 import { insertEnhancerJobOnSubmit } from '@/libs/persistence/enhancer/enhancerProcessedRecords';
 import { enqueueProcessing } from '@/libs/persistence/enhancer/processingClient';
 import { getUserCreditBalance } from '@/libs/persistence/users/getUserCreditBalance';
@@ -116,13 +116,15 @@ async function uploadSourceImage(
   const buffer = Buffer.from(await file.arrayBuffer());
   const key = `inputs/${userId}/${itemId}/${file.name}`;
 
-  await client.send(new PutObjectCommand({
-    Bucket: process.env.STORAGE_BUCKET,
-    Key: key,
-    Body: buffer,
-    ContentType: file.type,
-    ACL: 'public-read',
-  }));
+  await client.send(
+    new PutObjectCommand({
+      Bucket: process.env.STORAGE_BUCKET,
+      Key: key,
+      Body: buffer,
+      ContentType: file.type,
+      ACL: 'public-read',
+    }),
+  );
 
   const base = process.env.STORAGE_PUBLIC_BASE_URL?.replace(/\/$/, '') ?? '';
   return { imageUrl: `${base}/${key}`, inputStorageKey: key };

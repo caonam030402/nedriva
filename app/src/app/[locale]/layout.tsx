@@ -1,10 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
-import { ToastProvider } from '@heroui/react/toast';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import { PostHogProvider } from '@/components/analytics/PostHogProvider';
+import { PostHogProvider } from '@/components/providers/PostHogProvider';
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
 import { clerkAppearance } from '@/libs/core/ClerkAppearance';
 import { getClerkAuthUrls, getClerkLocalization } from '@/libs/core/clerkAuthUrls';
@@ -42,7 +41,7 @@ export const viewport: Viewport = {
 };
 
 export function generateStaticParams() {
-  return routing.locales.map(locale => ({ locale }));
+  return routing.locales.map((locale) => ({ locale }));
 }
 
 export default async function RootLayout(props: {
@@ -70,10 +69,7 @@ export default async function RootLayout(props: {
         >
           <NextIntlClientProvider>
             <PostHogProvider>
-              <ReactQueryProvider>
-                <ToastProvider />
-                {props.children}
-              </ReactQueryProvider>
+              <ReactQueryProvider>{props.children}</ReactQueryProvider>
             </PostHogProvider>
           </NextIntlClientProvider>
         </ClerkProvider>

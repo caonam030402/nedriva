@@ -13,7 +13,7 @@ import {
   listDoneEnhancerJobsForUser,
   listDoneEnhancerJobsForUserPaged,
 } from '@/libs/persistence/enhancer/enhancerProcessedRecords';
-import { formatEnhancerOpsSummary } from '@/utils/formatEnhancerOpsLabel';
+import { formatEnhancerOpsSummary } from '@/libs/helpers/enhancer-image/formatEnhancerImageOpsLabel';
 
 function mapHistoryRow(r: {
   id: string;
@@ -34,8 +34,8 @@ function mapHistoryRow(r: {
   deletedAt: Date | null;
 }): EnhancerHistoryItem {
   const rowOps = r.ops;
-  const opsRecord
-    = rowOps != null && typeof rowOps === 'object' && !Array.isArray(rowOps)
+  const opsRecord =
+    rowOps != null && typeof rowOps === 'object' && !Array.isArray(rowOps)
       ? (rowOps as Record<string, unknown>)
       : null;
   return {
@@ -69,24 +69,21 @@ export async function getEnhancerHistoryListResponse(
   listPage?: number,
 ): Promise<EnhancerHistoryListResponse> {
   if (listPage !== undefined) {
-    const { rows, total, page: effectivePage } = await listDoneEnhancerJobsForUserPaged(
-      userId,
-      limit,
-      listPage,
-    );
+    const {
+      rows,
+      total,
+      page: effectivePage,
+    } = await listDoneEnhancerJobsForUserPaged(userId, limit, listPage);
     const items = rows.map(mapHistoryRow);
     return buildPagePaginatedResponse(items, limit, effectivePage, total);
   }
 
   const rows = await listDoneEnhancerJobsForUser(userId, limit, cursor);
-  const { items, pagination } = buildCursorPaginatedResponse(
-    rows,
-    limit,
-    row =>
-      encodeKeysetCursor({
-        at: row.createdAt.toISOString(),
-        id: row.id,
-      }),
+  const { items, pagination } = buildCursorPaginatedResponse(rows, limit, (row) =>
+    encodeKeysetCursor({
+      at: row.createdAt.toISOString(),
+      id: row.id,
+    }),
   );
 
   return {

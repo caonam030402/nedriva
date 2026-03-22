@@ -9,7 +9,10 @@ import {
   listEnhancerRunsActiveForUser,
   listEnhancerRunsForUserPaged,
 } from '@/libs/persistence/enhancer/enhancerProcessedRecords';
-import { formatEnhancerOpsSummary, scaleFactorFromStoredOps } from '@/utils/formatEnhancerOpsLabel';
+import {
+  formatEnhancerOpsSummary,
+  scaleFactorFromStoredOps,
+} from '@/libs/helpers/enhancer-image/formatEnhancerImageOpsLabel';
 
 function mapRunRow(r: {
   id: string;
@@ -32,8 +35,8 @@ function mapRunRow(r: {
   deletedAt: Date | null;
 }): EnhancerRunItem {
   const rowOps = r.ops;
-  const opsRecord
-    = rowOps != null && typeof rowOps === 'object' && !Array.isArray(rowOps)
+  const opsRecord =
+    rowOps != null && typeof rowOps === 'object' && !Array.isArray(rowOps)
       ? (rowOps as Record<string, unknown>)
       : null;
   return {

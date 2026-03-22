@@ -4,7 +4,7 @@
  */
 
 import type { OpsState } from '@/types/enhancer';
-import { ESizeMode, EUpscaleModel } from '@/enums/enhancer';
+import { ESizeMode, EUpscaleModel } from '@/enums/enhancer-image';
 
 const BASE_URL = process.env.PYTHON_SERVICE_URL ?? 'http://localhost:8000';
 const API_KEY = process.env.PYTHON_SERVICE_API_KEY ?? '';

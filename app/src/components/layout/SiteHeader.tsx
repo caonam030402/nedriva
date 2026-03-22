@@ -5,7 +5,7 @@ import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { LocaleSwitcher } from '@/components/LocaleSwitcher';
+import { LocaleSwitcher } from '@/components/common/LocaleSwitcher';
 import { clerkUserButtonPopoverElements } from '@/libs/core/ClerkUserButtonAppearance';
 import { Link } from '@/libs/i18n/I18nNavigation';
 import { Routes } from '@/utils/Routes';
@@ -47,8 +47,8 @@ const NavLink = (props: { href: string; children: React.ReactNode }) => (
 );
 
 /** Signed-in CTA — glass + brand hover; avoids oversized gradient competing with avatar */
-const OPEN_APP_BTN_CLASS
-  = 'h-9 shrink-0 rounded-lg border border-white/10 bg-white/5 px-4 text-xs font-semibold tracking-wide text-foreground shadow-none ring-0 transition-colors hover:border-brand/45 hover:bg-brand/12 hover:text-brand-light';
+const OPEN_APP_BTN_CLASS =
+  'h-9 shrink-0 rounded-lg border border-white/10 bg-white/5 px-4 text-xs font-semibold tracking-wide text-foreground shadow-none ring-0 transition-colors hover:border-brand/45 hover:bg-brand/12 hover:text-brand-light';
 
 const headerUserButtonAppearance = {
   elements: {
@@ -64,9 +64,11 @@ export const SiteHeader = () => {
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/6">
-      <div className="absolute inset-0 -z-10 backdrop-blur-md" style={{ background: 'rgba(9,8,15,0.80)' }} />
+      <div
+        className="absolute inset-0 -z-10 backdrop-blur-md"
+        style={{ background: 'rgba(9,8,15,0.80)' }}
+      />
       <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-4 sm:px-6 lg:px-8">
-
         {/* ── Logo ── */}
         <Link href="/" className="flex items-center gap-2.5">
           <div
@@ -80,7 +82,6 @@ export const SiteHeader = () => {
 
         {/* ── Desktop nav ── */}
         <nav className="hidden items-center gap-1 sm:flex">
-
           {/* Solutions dropdown */}
           <div
             className="relative"
@@ -113,17 +114,17 @@ export const SiteHeader = () => {
                   transition={{ duration: 0.15, ease: 'easeOut' }}
                   className="absolute top-full left-0 z-50 mt-1 w-72 rounded-card border border-brand/20 bg-elevated p-2 shadow-card"
                 >
-                  {SOLUTIONS.map(item => (
+                  {SOLUTIONS.map((item) => (
                     <Link
                       key={item.key}
                       href={item.href}
                       className={`flex flex-col gap-0.5 rounded-ui-md px-3 py-2.5 transition-colors ${
-                        item.highlight
-                          ? 'bg-brand/10 hover:bg-brand/20'
-                          : 'hover:bg-surface'
+                        item.highlight ? 'bg-brand/10 hover:bg-brand/20' : 'hover:bg-surface'
                       }`}
                     >
-                      <span className={`flex items-center gap-1.5 text-sm font-medium ${item.highlight ? 'text-brand-light' : 'text-foreground'}`}>
+                      <span
+                        className={`flex items-center gap-1.5 text-sm font-medium ${item.highlight ? 'text-brand-light' : 'text-foreground'}`}
+                      >
                         {item.highlight && (
                           <span className="rounded-pill bg-brand/20 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-brand-light uppercase">
                             {t('solutions_new_badge')}
@@ -149,7 +150,11 @@ export const SiteHeader = () => {
           <LocaleSwitcher />
           <SignedOut>
             <Link href="/sign-in">
-              <Button variant="ghost" size="sm" className="font-medium text-muted hover:text-foreground">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="font-medium text-muted hover:text-foreground"
+              >
                 {t('sign_in')}
               </Button>
             </Link>
@@ -180,12 +185,20 @@ export const SiteHeader = () => {
           type="button"
           className="flex size-9 items-center justify-center justify-self-end rounded-ui-sm text-muted transition-colors hover:bg-surface hover:text-foreground sm:hidden"
           aria-label={t('toggle_menu_label')}
-          onClick={() => setMobileOpen(prev => !prev)}
+          onClick={() => setMobileOpen((prev) => !prev)}
         >
-          <svg className="size-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            {mobileOpen
-              ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />}
+          <svg
+            className="size-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+          >
+            {mobileOpen ? (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            )}
           </svg>
         </button>
       </div>
@@ -201,11 +214,10 @@ export const SiteHeader = () => {
             className="overflow-hidden border-t border-brand/20 bg-page sm:hidden"
           >
             <div className="space-y-1 px-4 pt-3 pb-4">
-
               <p className="mb-1 px-3 text-[11px] font-semibold tracking-widest text-subtle uppercase">
                 {t('solutions_label')}
               </p>
-              {SOLUTIONS.map(item => (
+              {SOLUTIONS.map((item) => (
                 <Link
                   key={item.key}
                   href={item.href}
@@ -214,7 +226,9 @@ export const SiteHeader = () => {
                   }`}
                   onClick={() => setMobileOpen(false)}
                 >
-                  <span className={`text-sm font-medium ${item.highlight ? 'text-brand-light' : 'text-foreground'}`}>
+                  <span
+                    className={`text-sm font-medium ${item.highlight ? 'text-brand-light' : 'text-foreground'}`}
+                  >
                     {t(item.labelKey)}
                   </span>
                   <span className="text-xs text-subtle">{t(item.descKey)}</span>
@@ -252,7 +266,10 @@ export const SiteHeader = () => {
               <SignedOut>
                 <div className="flex gap-2">
                   <Link href="/sign-in" className="flex-1" onClick={() => setMobileOpen(false)}>
-                    <Button variant="outline" className="w-full border-white/10 font-medium text-muted">
+                    <Button
+                      variant="outline"
+                      className="w-full border-white/10 font-medium text-muted"
+                    >
                       {t('sign_in')}
                     </Button>
                   </Link>

@@ -12,7 +12,7 @@ import type { OpsState, QueueItem } from '@/types/enhancer';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useRef, useState } from 'react';
 import { reactQueryKeys } from '@/constants/reactQueryKeys';
-import { EQueueStatus } from '@/enums/enhancer';
+import { EQueueStatus } from '@/enums/enhancer-image';
 import { fetchEnhancerJobStatus, submitEnhancerProcess } from '@/libs/apis/enhancer';
 
 export type EnhancerJobPollState = {
@@ -65,56 +65,59 @@ export function useProcessJob() {
     }
   }, []);
 
-  const _poll = useCallback((queueItemId: string, jobId: string) => {
-    let count = 0;
+  const _poll = useCallback(
+    (queueItemId: string, jobId: string) => {
+      let count = 0;
 
-    const timer = setInterval(async () => {
-      count++;
-      if (count > MAX_POLLS) {
-        _stopPolling(queueItemId);
-        _updateJob(queueItemId, { status: EQueueStatus.Error, error: 'Timeout' });
-        return;
-      }
-
-      try {
-        const data = await fetchEnhancerJobStatus(jobId);
-        if (data == null) {
+      const timer = setInterval(async () => {
+        count++;
+        if (count > MAX_POLLS) {
+          _stopPolling(queueItemId);
+          _updateJob(queueItemId, { status: EQueueStatus.Error, error: 'Timeout' });
           return;
         }
 
-        // Backend: queued = accepted, waiting for arq worker (NOT "ready to submit again")
-        // Must map to Processing — mapping to Ready caused UI to flip back + double-submit bugs
-        const statusMap: Record<string, EQueueStatus> = {
-          queued: EQueueStatus.Processing,
-          processing: EQueueStatus.Processing,
-          done: EQueueStatus.Done,
-          error: EQueueStatus.Error,
-        };
-
-        _updateJob(queueItemId, {
-          status: statusMap[data.status] ?? EQueueStatus.Processing,
-          outputUrl: data.output_url,
-          outputs: data.outputs,
-          outputWidth: data.output_width,
-          outputHeight: data.output_height,
-          error: data.error,
-          processingMs: data.processing_ms,
-        });
-
-        if (data.status === 'done' || data.status === 'error') {
-          _stopPolling(queueItemId);
-          void queryClient.invalidateQueries({ queryKey: reactQueryKeys.enhancer.runs() });
-          if (data.status === 'done') {
-            void queryClient.invalidateQueries({ queryKey: reactQueryKeys.enhancer.histories() });
+        try {
+          const data = await fetchEnhancerJobStatus(jobId);
+          if (data == null) {
+            return;
           }
-        }
-      } catch {
-        // Network error — keep polling
-      }
-    }, POLL_INTERVAL_MS);
 
-    pollRefs.current[queueItemId] = timer;
-  }, [_updateJob, _stopPolling, queryClient]);
+          // Backend: queued = accepted, waiting for arq worker (NOT "ready to submit again")
+          // Must map to Processing — mapping to Ready caused UI to flip back + double-submit bugs
+          const statusMap: Record<string, EQueueStatus> = {
+            queued: EQueueStatus.Processing,
+            processing: EQueueStatus.Processing,
+            done: EQueueStatus.Done,
+            error: EQueueStatus.Error,
+          };
+
+          _updateJob(queueItemId, {
+            status: statusMap[data.status] ?? EQueueStatus.Processing,
+            outputUrl: data.output_url,
+            outputs: data.outputs,
+            outputWidth: data.output_width,
+            outputHeight: data.output_height,
+            error: data.error,
+            processingMs: data.processing_ms,
+          });
+
+          if (data.status === 'done' || data.status === 'error') {
+            _stopPolling(queueItemId);
+            void queryClient.invalidateQueries({ queryKey: reactQueryKeys.enhancer.runs() });
+            if (data.status === 'done') {
+              void queryClient.invalidateQueries({ queryKey: reactQueryKeys.enhancer.histories() });
+            }
+          }
+        } catch {
+          // Network error — keep polling
+        }
+      }, POLL_INTERVAL_MS);
+
+      pollRefs.current[queueItemId] = timer;
+    },
+    [_updateJob, _stopPolling, queryClient],
+  );
 
   /**
    * Stop polling and drop client job state (e.g. user removed the row / cleared queue).
@@ -158,40 +161,43 @@ export function useProcessJob() {
     [_updateJob, _poll],
   );
 
-  const submit = useCallback(async (item: QueueItem, ops: OpsState) => {
-    _updateJob(item.id, {
-      jobId: '',
-      status: EQueueStatus.Processing,
-      outputUrl: null,
-      outputs: null,
-      outputWidth: null,
-      outputHeight: null,
-      error: null,
-      processingMs: null,
-    });
-
-    try {
-      const formData = new FormData();
-      formData.append('file', item.file);
-      formData.append('queueItemId', item.id);
-      formData.append('ops', JSON.stringify(ops));
-      if (item.width != null && item.height != null) {
-        formData.append('inputWidth', String(item.width));
-        formData.append('inputHeight', String(item.height));
-      }
-
-      const { jobId } = await submitEnhancerProcess(formData);
-      _updateJob(item.id, { jobId, status: EQueueStatus.Processing });
-      void queryClient.invalidateQueries({ queryKey: reactQueryKeys.enhancer.runs() });
-      void queryClient.invalidateQueries({ queryKey: reactQueryKeys.user.credits() });
-      _poll(item.id, jobId);
-    } catch (err) {
+  const submit = useCallback(
+    async (item: QueueItem, ops: OpsState) => {
       _updateJob(item.id, {
-        status: EQueueStatus.Error,
-        error: err instanceof Error ? err.message : 'Unknown error',
+        jobId: '',
+        status: EQueueStatus.Processing,
+        outputUrl: null,
+        outputs: null,
+        outputWidth: null,
+        outputHeight: null,
+        error: null,
+        processingMs: null,
       });
-    }
-  }, [_updateJob, _poll, queryClient]);
+
+      try {
+        const formData = new FormData();
+        formData.append('file', item.file);
+        formData.append('queueItemId', item.id);
+        formData.append('ops', JSON.stringify(ops));
+        if (item.width != null && item.height != null) {
+          formData.append('inputWidth', String(item.width));
+          formData.append('inputHeight', String(item.height));
+        }
+
+        const { jobId } = await submitEnhancerProcess(formData);
+        _updateJob(item.id, { jobId, status: EQueueStatus.Processing });
+        void queryClient.invalidateQueries({ queryKey: reactQueryKeys.enhancer.runs() });
+        void queryClient.invalidateQueries({ queryKey: reactQueryKeys.user.credits() });
+        _poll(item.id, jobId);
+      } catch (err) {
+        _updateJob(item.id, {
+          status: EQueueStatus.Error,
+          error: err instanceof Error ? err.message : 'Unknown error',
+        });
+      }
+    },
+    [_updateJob, _poll, queryClient],
+  );
 
   return { jobs, submit, resumePolling, dismissJob };
 }

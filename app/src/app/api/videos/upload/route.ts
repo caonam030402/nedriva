@@ -24,7 +24,7 @@ import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/core/DB';
-import { probeVideo } from '@/libs/video/ffprobe';
+import { probeVideo } from '@/libs/helpers/enhancer-video/ffprobe';
 import { videos } from '@/models/VideoEnhancementSchema';
 
 export async function POST(req: NextRequest) {
@@ -44,25 +44,39 @@ export async function POST(req: NextRequest) {
   }
 
   const [video] = await db
-    .select({ id: videos.id, userId: videos.userId, inputUrl: videos.inputUrl, mimeType: videos.mimeType })
+    .select({
+      id: videos.id,
+      userId: videos.userId,
+      inputUrl: videos.inputUrl,
+      mimeType: videos.mimeType,
+    })
     .from(videos)
     .where(eq(videos.id, videoId))
     .limit(1);
 
   if (!video) return NextResponse.json({ error: 'Video not found' }, { status: 404 });
-  if (video.userId !== userId) return NextResponse.json({ error: 'Video not found' }, { status: 404 });
+  if (video.userId !== userId)
+    return NextResponse.json({ error: 'Video not found' }, { status: 404 });
 
   // Probe metadata from R2 (download → ffprobe → discard temp file)
-  let meta: { durationSecs: number; width: number; height: number; fps: number; sizeBytes: number } | null = null;
+  let meta: {
+    durationSecs: number;
+    width: number;
+    height: number;
+    fps: number;
+    sizeBytes: number;
+  } | null = null;
   try {
-    const { downloadTempFile } = await import('@/libs/video/ffprobe');
+    const { downloadTempFile } = await import('@/libs/helpers/enhancer-video/ffprobe');
     const tmpPath = await downloadTempFile(video.inputUrl, videoId);
     if (tmpPath) {
       const probed = await probeVideo(tmpPath);
       if (probed) {
         meta = probed;
         const { rm } = await import('node:fs/promises');
-        await rm(tmpPath).catch(() => { /* best-effort cleanup */ });
+        await rm(tmpPath).catch(() => {
+          /* best-effort cleanup */
+        });
       }
     }
   } catch {

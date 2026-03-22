@@ -1,5 +1,3 @@
-import type { UserConfig } from '@commitlint/types';
-
 /**
  * Optional gitmoji before type (`🔧 chore: …`), aligned with cz-customizable `typeEmojis`.
  * Must stay 3 capture groups (type, scope, subject) so conventional-commits-parser
@@ -7,7 +5,7 @@ import type { UserConfig } from '@commitlint/types';
  */
 const gitmojiPrefix = '(?:\\p{Extended_Pictographic}+\\s)?';
 
-const Configuration: UserConfig = {
+const Configuration = {
   extends: ['@commitlint/config-conventional'],
   parserPreset: {
     parserOpts: {

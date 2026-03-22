@@ -2,7 +2,7 @@
 
 import { UserButton } from '@clerk/nextjs';
 import { useTranslations } from 'next-intl';
-import { LocaleSwitcher } from '@/components/LocaleSwitcher';
+import { LocaleSwitcher } from '@/components/common/LocaleSwitcher';
 import { useUserCreditBalanceQuery } from '@/hooks/react-query/queries/user/useUserCreditBalanceQuery';
 import { clerkUserButtonPopoverElements } from '@/libs/core/ClerkUserButtonAppearance';
 import { Link, usePathname } from '@/libs/i18n/I18nNavigation';
@@ -29,7 +29,11 @@ const TOOLS: ToolItem[] = [
 
 const InviteIcon = () => (
   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} className="size-3.5">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M7 8.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M7 8.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"
+    />
     <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 14c0-2.485 2.462-4.5 5.5-4.5" />
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v4m-2-2h4" />
   </svg>
@@ -39,7 +43,11 @@ const InviteIcon = () => (
 
 const CreditIcon = () => (
   <svg viewBox="0 0 16 16" fill="currentColor" className="size-3.5 text-warning">
-    <path fillRule="evenodd" d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8zm9 0a1 1 0 11-2 0 1 1 0 012 0zm-1-5.25a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3A.75.75 0 018 2.75z" clipRule="evenodd" />
+    <path
+      fillRule="evenodd"
+      d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8zm9 0a1 1 0 11-2 0 1 1 0 012 0zm-1-5.25a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3A.75.75 0 018 2.75z"
+      clipRule="evenodd"
+    />
   </svg>
 );
 
@@ -59,9 +67,11 @@ export const BoostHeader = (props: Props) => {
   return (
     <header className="sticky top-0 z-60 border-b border-white/6">
       {/* bg + blur on a child so header doesn't create a backdrop-filter stacking context */}
-      <div className="absolute inset-0 -z-10 backdrop-blur-md" style={{ background: 'rgba(9,8,15,0.80)' }} />
+      <div
+        className="absolute inset-0 -z-10 backdrop-blur-md"
+        style={{ background: 'rgba(9,8,15,0.80)' }}
+      />
       <div className="mx-auto flex h-16 max-w-screen-2xl items-center gap-2 overflow-x-auto px-4 sm:gap-3 sm:px-6">
-
         {/* ── Logo ── */}
         <Link href={Routes.dashboard.index} className="mr-3 flex shrink-0 items-center gap-2.5">
           <div
@@ -76,9 +86,10 @@ export const BoostHeader = (props: Props) => {
         {/* ── Tool tabs ── */}
         <nav className="flex items-center gap-0.5">
           {TOOLS.map((tool) => {
-            const isActive = tool.href === Routes.dashboard.index
-              ? pathname === Routes.dashboard.index
-              : pathname.startsWith(tool.href);
+            const isActive =
+              tool.href === Routes.dashboard.index
+                ? pathname === Routes.dashboard.index
+                : pathname.startsWith(tool.href);
             return (
               <Link
                 key={tool.key}
@@ -105,7 +116,6 @@ export const BoostHeader = (props: Props) => {
 
         {/* ── Right controls ── */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-
           {/* Invite friends */}
           <Link
             href={Routes.dashboard.invite}
