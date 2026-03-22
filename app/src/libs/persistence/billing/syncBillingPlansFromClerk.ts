@@ -11,6 +11,7 @@ import {
   PLAN_CATALOG_FEATURE_SEED,
 } from '@/constants/billingCatalogFeatures';
 import { resolveBillingPlanSlug } from '@/constants/billingPlanBenefits';
+import { PlanPayerType } from '@/constants/clerkPlanKeys';
 import { db } from '@/libs/core/DB';
 import { logger } from '@/libs/core/Logger';
 import { planBenefits, planCatalogFeatures, planFeatures, plans } from '@/models/Schema';
@@ -28,8 +29,8 @@ function normalizeClerkPlanSlugForDb(slug: string): string {
   return resolveBillingPlanSlug(slug) ?? slug.trim().toLowerCase();
 }
 
-function payerTypeFromClerkPlan(plan: BillingPlan): 'user' | 'organization' {
-  return plan.forPayerType === 'org' ? 'organization' : 'user';
+function payerTypeFromClerkPlan(plan: BillingPlan): PlanPayerType {
+  return plan.forPayerType === 'org' ? PlanPayerType.Organization : PlanPayerType.User;
 }
 
 function planToSnapshot(plan: BillingPlan): Record<string, unknown> {
@@ -43,7 +44,7 @@ function planToSnapshot(plan: BillingPlan): Record<string, unknown> {
     isRecurring: plan.isRecurring,
     hasBaseFee: plan.hasBaseFee,
     publiclyVisible: plan.publiclyVisible,
-    features: (plan.features ?? []).map(f => ({
+    features: (plan.features ?? []).map((f: { id: string; slug: string; name: string; description?: string | null }) => ({
       id: f.id,
       slug: f.slug,
       name: f.name,
@@ -54,13 +55,14 @@ function planToSnapshot(plan: BillingPlan): Record<string, unknown> {
 
 async function fetchAllPlansForPayerType(
   client: Awaited<ReturnType<typeof clerkClient>>,
-  payerType: 'user' | 'org',
+  payerType: PlanPayerType,
 ): Promise<BillingPlan[]> {
   const out: BillingPlan[] = [];
   let offset = 0;
   const limit = 100;
+  const clerkPayerType = payerType === PlanPayerType.Organization ? 'org' : 'user';
   for (;;) {
-    const res = await client.billing.getPlanList({ payerType, limit, offset });
+    const res = await client.billing.getPlanList({ payerType: clerkPayerType, limit, offset });
     out.push(...res.data);
     if (res.data.length === 0) {
       break;
@@ -92,10 +94,10 @@ async function ensurePlanCatalogFeatureRows(executor: DbExecutor): Promise<void>
 
 function catalogFeatureIdsFromClerkPlan(plan: BillingPlan): BillingCatalogFeatureId[] {
   const raw = plan.features ?? [];
-  const ids = raw
-    .map(f => catalogFeatureIdFromClerkFeatureSlug(f.slug))
-    .filter((x): x is BillingCatalogFeatureId => x != null);
-  return [...new Set(ids)];
+  const matched: BillingCatalogFeatureId[] = raw
+    .map((f: { slug: string }) => catalogFeatureIdFromClerkFeatureSlug(f.slug))
+    .filter((x: BillingCatalogFeatureId | null): x is BillingCatalogFeatureId => x != null);
+  return [...new Set<BillingCatalogFeatureId>(matched)];
 }
 
 async function upsertOneClerkPlan(executor: DbExecutor, plan: BillingPlan): Promise<void> {
@@ -115,7 +117,7 @@ async function upsertOneClerkPlan(executor: DbExecutor, plan: BillingPlan): Prom
     }
   }
 
-  await executor.transaction(async tx => {
+  await executor.transaction(async (tx) => {
     const [row] = await tx
       .insert(plans)
       .values({
@@ -167,7 +169,7 @@ async function upsertOneClerkPlan(executor: DbExecutor, plan: BillingPlan): Prom
 
     if (featureIds.length > 0) {
       await tx.insert(planFeatures).values(
-        featureIds.map(featureId => ({
+        featureIds.map((featureId) => ({
           planId,
           featureId,
         })),
@@ -188,8 +190,8 @@ export async function syncBillingPlansFromClerk(
   await ensurePlanCatalogFeatureRows(executor);
 
   const client = await clerkClient();
-  const userPlans = await fetchAllPlansForPayerType(client, 'user');
-  const orgPlans = await fetchAllPlansForPayerType(client, 'org');
+  const userPlans = await fetchAllPlansForPayerType(client, PlanPayerType.User);
+  const orgPlans = await fetchAllPlansForPayerType(client, PlanPayerType.Organization);
   const combined = [...userPlans, ...orgPlans];
 
   for (const plan of combined) {

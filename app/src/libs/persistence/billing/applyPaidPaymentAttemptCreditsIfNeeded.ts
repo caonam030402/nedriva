@@ -4,16 +4,12 @@ import { db } from '@/libs/core/DB';
 import { logger } from '@/libs/core/Logger';
 import {
   planPayerTypeFromClerkBillingPayer,
-  totalCreditsForPaymentLineItemsDb,
+  resolveBillingSlugsFromLineItems,
+  totalCreditsForPaymentLineItemsDbWithPayerFallback,
 } from '@/libs/persistence/billing/planCatalog';
 import { paymentAttempts, users } from '@/models/Schema';
 
 type PaymentData = BillingPaymentAttemptWebhookEvent['data'];
-
-function planSlugsFromPayment(data: PaymentData): string[] {
-  const items = data.subscription_items ?? [];
-  return items.map((item) => item.plan?.slug ?? item.plan_id ?? '').filter(s => s.length > 0);
-}
 
 /**
  * On `paymentAttempt.*` with `status: paid`, add credits once per `(instance_id, payment_id)`.
@@ -25,11 +21,11 @@ export async function applyPaidPaymentAttemptCreditsIfNeeded(data: PaymentData):
     return;
   }
 
-  const slugs = planSlugsFromPayment(data);
   const payerType = planPayerTypeFromClerkBillingPayer(data.payer);
 
   await db.transaction(async tx => {
-    const credits = await totalCreditsForPaymentLineItemsDb(tx, slugs, payerType);
+    const slugs = await resolveBillingSlugsFromLineItems(tx, data.subscription_items ?? []);
+    const credits = await totalCreditsForPaymentLineItemsDbWithPayerFallback(tx, slugs, payerType);
     const [claimed] = await tx
       .update(paymentAttempts)
       .set({ benefitsAppliedAt: new Date() })

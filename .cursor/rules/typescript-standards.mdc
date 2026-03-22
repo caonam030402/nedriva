@@ -34,58 +34,31 @@ function create(options: { name: string; age: number; active: boolean }) {}
 
 - `noUncheckedIndexedAccess` is on — array access returns `T | undefined`, handle it
 
-## Enums & Types — file structure
+## Enums & Types — simple approach
 
-Keep enums and types **global and separate**:
+See `.cursor/rules/coding-guidelines.mdc` for the full approach. Quick rules:
 
-```
-src/
-  enums/
-    enhancer.ts     ← E-prefixed enums for the enhancer feature
-    billing.ts      ← E-prefixed enums for billing, etc.
-  types/
-    api/            ← shared HTTP/list contracts (`pagination.ts`, `index.ts` barrel)
-    enhancer/       ← `state.ts` (UI/domain) + `*Api.ts` (wire JSON) + `index.ts` barrel
-  libs/
-    i18n/           ← runtime next-intl (`I18n.ts`) + `next-intl-app-config.ts` (AppConfig augmentation)
-```
-
-Rules:
-- **Enum files** live in `src/enums/` — one file per feature domain.
-- **Enum names** always prefixed with `E`: `EUpscaleModel`, `ESizeMode`, `EQueueStatus`.
-- **Type modules** live in `src/types/<module>/` — use an `index.ts` barrel for public exports; split when a module grows.
-- **Feature API JSON** (request/response bodies your Next routes or Python proxy return) → `src/types/<module>/<endpoint>Api.ts` (e.g. `enhancer/historyApi.ts`, `enhancer/jobApi.ts`, `enhancer/processApi.ts`). **Do not** define those shapes inside `src/libs/apis/*` — fetchers only import types from `@/types/...`.
-- Types may import enums via `import type { EFoo } from '@/enums/...'`.
-- Never use string-union types for stable domain values — always `enum`.
+- **Small domain values** (2-5 values, rarely change) → `const object` + `type` union, placed in the feature's constants file.
+- **Large domains with heavy logic** → `enum` in a separate file, consider if it's worth it.
+- Type files live in `src/constants/<feature>*.ts` or `src/models/Schema.ts`. No `types.ts` or `enums.ts` scatter files.
+- Feature API types (request/response bodies) → `src/types/<module>/<endpoint>Api.ts`.
 
 ```typescript
-// ❌ BAD — string-union, no auto-complete, fragile to rename
-type UpscaleModel = 'prime' | 'gentle' | 'old_photo';
+// ✅ Preferred — simple const + type, placed close to where it's used
+export type PlanPayerType = 'user' | 'organization';
+export const PlanPayerType = {
+  User: 'user',
+  Organization: 'organization',
+} as const;
 
-// ✅ GOOD — E-prefix enum in src/enums/enhancer.ts
-export enum EUpscaleModel {
-  Prime    = 'prime',
-  Gentle   = 'gentle',
-  OldPhoto = 'old_photo',
+// ✅ Fine when domain is large and logic-heavy
+export enum EQueueStatus {
+  Pending    = 'pending',
+  Processing = 'processing',
+  Done       = 'done',
+  Failed     = 'failed',
 }
 ```
-
-Feature folders use a `constants.ts` (not `types.ts`) for runtime values and helpers.
-`types.ts` is **never** the place for functions or constants:
-
-```
-src/components/dashboard/enhance-image/
-  constants.ts         ← INITIAL_OPS, model lists, calcCredits(), etc.
-  EnhancerUploadZone.tsx
-  OperationsPanel.tsx  ← imports from @/enums, @/types, ./constants
-  PresetsPanel.tsx
-  QueueRow.tsx
-```
-
-- Import enums directly: `import { EUpscaleModel } from '@/enums/enhancer'`
-- Import types from the barrel or the concrete file: `import type { OpsState } from '@/types/enhancer'` or `import type { EnhancerJobStatusBody } from '@/types/enhancer/jobApi'` when you want a stable path for one endpoint.
-- Import feature constants: `import { INITIAL_OPS } from './constants'`
-- **Never** put functions or constants inside a `types.ts` file
 
 ## Component Size & Splitting
 - Keep each `.tsx` file under ~150 lines.

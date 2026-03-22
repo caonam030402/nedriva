@@ -1,0 +1,191 @@
+---
+description: Coding guidelines — simple, pragmatic, scale-ready
+alwaysApply: true
+---
+
+# Coding Guidelines
+
+## Nguyên tắc gốc
+
+1. **Đơn giản hơn đúng.** Đoạn code đọc hiểu được trong 5 giây luôn tốt hơn đoạn code "đúng" nhưng phải đọc 2 phút.
+2. **Chỉ thêm cấu trúc khi có lý do.** Không thêm abstraction chỉ vì "best practice". Nếu có 2 cách làm, chọn cái ít code hơn, ít file hơn.
+3. **Cấu trúc mới chỉ khi code cũ bắt đầu đau.** Refactor khi thực sự cần, không refactor phòng ngừa.
+4. **Scale từ đầu, nhưng đừng over-engineer.** Viết query biết rằng bảng sẽ có triệu row, nhưng đừng tối ưu trước khi có data.
+
+---
+
+## TypeScript — giữ đơn giản
+
+### String union cho domain values nhỏ
+
+```typescript
+// ❌ Phứcạp, nhiều file, nhiều import
+// src/enums/billing.ts
+export enum EPlanPayerType { User = 'user', Organization = 'organization' }
+
+// ✅ Đơn giản, đặt ngay chỗ dùng
+export type PlanPayerType = 'user' | 'organization';
+export const PlanPayerType = {
+  User: 'user',
+  Organization: 'organization',
+} as const;
+```
+
+- Với domain nhỏ (2-5 giá trị ít thay đổi) → dùng `const object` + `type` union ở trên.
+- Với domain lớn, nhiều logic đi kèm → cân nhắc `enum` riêng.
+- Không bắt buộc E-prefix, không bắt file riêng cho enum.
+
+### Types
+
+- `type` thay vì `interface` (đã có ESLint rule).
+- Không `any`. Dùng `unknown` + narrowing, hoặc explicit type annotation.
+- Đặt type gần nơi dùng nhất. Type dùng chung nhiều chỗ → đặt ở file `constants/` hoặc `types/` của feature đó.
+
+### Imports
+
+```typescript
+// ✅ Đúng: dùng @/ cho cross-directory
+import { db } from '@/libs/core/DB';
+import { PlanPayerType } from '@/constants/clerkPlanKeys';
+
+// ✅ Đúng: dùng ./ cho cùng directory
+import { FREE_SUBSCRIPTION_CAPABILITIES } from './billingPlanBenefits';
+
+// ❌ Sai: @/ cho cùng directory
+import { FREE_SUBSCRIPTION_CAPABILITIES } from '@/libs/persistence/billing/billingPlanBenefits';
+```
+
+### Functions
+
+- Trên 3 tham số hoặc tham số optional → dùng options object:
+
+```typescript
+// ❌
+function createJob(userId: string, operation: string, creditCost: number, inputKey: string) {}
+
+// ✅
+function createJob(opts: { userId: string; operation: string; creditCost: number; inputKey: string }) {}
+```
+
+---
+
+## Database — tối ưu cho hàng triệu row
+
+### Index đúng từ đầu
+
+Luôn hỏi: **"Query này sẽ chạy trên bao nhiêu row?"** trước khi viết.
+
+```typescript
+// ❌ Chậm khi bảng lớn — không có index trên cột được filter
+const rows = await executor.select().from(jobs).where(eq(jobs.status, 'pending'));
+
+// ✅ Thêm index: jobs(status, user_id, created_at) — composite index theo thứ tự filter
+// Mọi WHERE clause dùng trong query → có index tương ứng
+```
+
+Index cần có cho: `WHERE`, `JOIN ON`, `ORDER BY`, `GROUP BY`.
+
+### Tránh N+1
+
+```typescript
+// ❌ N+1: 1 query + N query cho mỗi row
+for (const job of jobs) {
+  const user = await db.select().from(users).where(eq(users.id, job.userId));
+}
+
+// ✅ Batch: 2 query thay vì N+1
+const userIds = [...new Set(jobs.map(j => j.userId))];
+const usersMap = await db.select().from(users).where(inArray(users.id, userIds));
+```
+
+### Transaction cho write nhiều bước
+
+```typescript
+// ✅ Dùng transaction để tránh partial state
+await db.transaction(async (tx) => {
+  await tx.update(credits).set({ balance: newBalance }).where(eq(credits.userId, userId));
+  await tx.insert(jobs).values({ ... });
+});
+```
+
+### Pagination luôn cho list API
+
+```typescript
+// ✅ Cursor pagination cho dữ liệu lớn
+const rows = await executor
+  .select()
+  .from(jobs)
+  .where(and(eq(jobs.userId, userId), cursor ? gt(jobs.id, cursor) : undefined))
+  .orderBy(jobs.id)
+  .limit(pageSize);
+```
+
+- `< 10k row` → offset OK.
+- `> 10k row` → cursor pagination bắt buộc.
+- Không load full list rồi slice ở app — luôn LIMIT ở SQL.
+
+### Drizzle ORM patterns
+
+```typescript
+// ✅ Chọn cột cần, không SELECT *
+const rows = await executor
+  .select({ id: plans.id, slug: plans.clerkSlug })
+  .from(plans)
+  .innerJoin(planBenefits, eq(plans.id, planBenefits.planId))
+  .where(and(eq(plans.payerType, payerType), inArray(plans.clerkSlug, slugs)));
+
+// ✅ WHERE với nhiều điều kiện
+.where(and(
+  eq(plans.payerType, payerType),
+  inArray(plans.clerkSlug, candidates),
+  eq(planBenefits.active, true),
+));
+```
+
+---
+
+## Naming
+
+- Table/Column: `snake_case` (DB) → Drizzle tự map sang `camelCase` (TS).
+- File/Export: `PascalCase` cho component/class, `camelCase` cho utils.
+- Không mix `userId`, `user_id`, `uid` trong cùng 1 context.
+
+---
+
+## Comments & JSDoc
+
+- Comment bằng **tiếng Anh** (project convention).
+- Chỉ viết JSDoc khi function không tự giải thích được. Viết **mục đích**, không viết lại code.
+- `@param` khi có — luôn thêm mô tả sau dấu `-`.
+
+```typescript
+/**
+ * Resolve plan slugs from Clerk webhook line items.
+ * Falls back to clerk_plan_id lookup if slug is missing (happens on plans not yet synced).
+ * @param executor - DB or transaction.
+ * @param items - Line items from subscription/payment webhook.
+ */
+```
+
+---
+
+## Khi nào cần tạo file mới
+
+| Situation | Action |
+|-----------|--------|
+| Logic mới dùng 1 chỗ | Thêm vào file gần nhất, không tạo file mới |
+| Logic dùng 2-3 chỗ cùng feature | Tách vào `constants.ts` của feature đó |
+| Logic dùng nhiều feature | Tách vào `src/libs/` hoặc `src/constants/` |
+| Type/interface dùng chung | `src/models/Schema.ts` hoặc file `constants/` gần nhất |
+
+**Không tạo file `types.ts`, `enums.ts`, `utils.ts` rải rác.** Đặt theo domain: `billingPlanCatalog.ts`, `enhancerOperations.ts`.
+
+---
+
+## Cập nhật rule này
+
+Khi gặp pattern mới, bug mới, hoặc convention mới:
+
+1. Nếu pattern đủ phổ biến → thêm vào doc này.
+2. Nếu có exception → ghi rõ exception trong code bằng comment.
+3. Không để rule cứng mà không có real-world example.

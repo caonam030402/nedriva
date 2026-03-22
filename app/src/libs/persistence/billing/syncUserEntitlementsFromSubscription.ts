@@ -4,18 +4,24 @@ import { FREE_SUBSCRIPTION_CAPABILITIES } from '@/constants/billingPlanBenefits'
 import { db } from '@/libs/core/DB';
 import { logger } from '@/libs/core/Logger';
 import {
-  mergeCapabilitiesFromBillingPlansDb,
+  mergeCapabilitiesFromBillingPlansDbWithPayerFallback,
   planPayerTypeFromClerkBillingPayer,
+  resolveBillingSlugsFromLineItems,
 } from '@/libs/persistence/billing/planCatalog';
 import { tryAwardReferrerSubscriptionBonus } from '@/libs/persistence/users/tryAwardReferrerSubscriptionBonus';
 import { userSubscriptionCapabilities } from '@/models/Schema';
 
 type SubscriptionData = BillingSubscriptionWebhookEvent['data'];
 
-function planSlugsFromSubscription(data: SubscriptionData): string[] {
-  const items = data.items ?? [];
-  return items.map((item) => item.plan?.slug ?? item.plan_id ?? '').filter(s => s.length > 0);
-}
+/**
+ * Clerk may keep entitlements during these statuses (not only `active`).
+ * `upcoming` / `past_due` still carry paid line items; `incomplete` / `canceled` / … do not.
+ */
+const SUBSCRIPTION_STATUSES_WITH_PLAN_ENTITLEMENTS = new Set<SubscriptionData['status']>([
+  'active',
+  'upcoming',
+  'past_due',
+]);
 
 function capsToRow(
   userId: string,
@@ -54,30 +60,50 @@ export async function syncUserEntitlementsFromSubscription(data: SubscriptionDat
     return;
   }
 
-  const slugs = planSlugsFromSubscription(data);
-  const active = data.status === 'active';
+  const items = data.items ?? [];
+  const slugs = await resolveBillingSlugsFromLineItems(db, items);
+  const shouldMergeEntitlements = SUBSCRIPTION_STATUSES_WITH_PLAN_ENTITLEMENTS.has(data.status);
   const snapshot = slugs.length > 0 ? slugs.join(',') : null;
   const payerType = planPayerTypeFromClerkBillingPayer(data.payer);
 
   let caps: SubscriptionCapabilities = { ...FREE_SUBSCRIPTION_CAPABILITIES };
   let primaryPlanId: string | null = null;
 
-  if (active) {
-    const merged = await mergeCapabilitiesFromBillingPlansDb(db, slugs, payerType);
+  if (shouldMergeEntitlements) {
+    const merged = await mergeCapabilitiesFromBillingPlansDbWithPayerFallback(db, slugs, payerType);
     caps = merged.caps;
     primaryPlanId = merged.primaryPlanId;
+    if (
+      merged.effectivePayerType !== payerType
+      && slugs.length > 0
+      && caps.monthlyCreditAllowance > 0
+    ) {
+      logger.info('Resolved subscription entitlements using alternate payer_type (Clerk payer mismatch)', {
+        subscriptionId: data.id,
+        userId,
+        webhookPayerType: payerType,
+        effectivePayerType: merged.effectivePayerType,
+        slugs,
+      });
+    }
   }
 
-  if (active && slugs.length > 0 && caps.monthlyCreditAllowance === 0) {
-    logger.warn('Active subscription: no matching plans rows — check clerk_slug + payer_type seed', {
+  if (shouldMergeEntitlements && slugs.length > 0 && caps.monthlyCreditAllowance === 0) {
+    logger.warn('Subscription with entitlements merge: no matching plans rows — check clerk_slug + payer_type + plan sync', {
       slugs,
       payerType,
       subscriptionId: data.id,
       userId,
+      status: data.status,
     });
   }
 
-  const row = capsToRow(userId, active ? snapshot : null, caps, active ? primaryPlanId : null);
+  const row = capsToRow(
+    userId,
+    shouldMergeEntitlements ? snapshot : null,
+    caps,
+    shouldMergeEntitlements ? primaryPlanId : null,
+  );
   const { userId: _pk, ...updates } = row;
   void _pk;
 
@@ -92,7 +118,7 @@ export async function syncUserEntitlementsFromSubscription(data: SubscriptionDat
       },
     });
 
-  if (active && caps.monthlyCreditAllowance > 0) {
+  if (shouldMergeEntitlements && caps.monthlyCreditAllowance > 0) {
     await tryAwardReferrerSubscriptionBonus(userId, caps.monthlyCreditAllowance);
   }
 }

@@ -3,6 +3,12 @@
  * If you rename a plan in Clerk, update this file to match.
  */
 
+/** Payer type — mirrors `plans.payer_type` / `plan_payer_type` DB enum. */
+export enum PlanPayerType {
+  User = 'user',
+  Organization = 'organization',
+}
+
 /** Personal (User plans) — slug column in Dashboard */
 export const CLERK_USER_PLAN_KEY = {
   starter: 'starter',
@@ -31,4 +37,26 @@ export function isClerkUserPlanKey(value: string): value is ClerkUserPlanKey {
 
 export function isClerkOrganizationPlanKey(value: string): value is ClerkOrganizationPlanKey {
   return (ORG_VALUES as readonly string[]).includes(value);
+}
+
+/** Free-tier plan slugs from Clerk Dashboard (not in paid seed rows). */
+export const CLERK_FREE_USER_PLAN_SLUG = 'free_user' as const;
+export const CLERK_FREE_ORG_PLAN_SLUG = 'free_org' as const;
+
+export function isClerkFreeUserPlanSlug(value: string): boolean {
+  return value === CLERK_FREE_USER_PLAN_SLUG;
+}
+
+export function isClerkFreeOrgPlanSlug(value: string): boolean {
+  return value === CLERK_FREE_ORG_PLAN_SLUG;
+}
+
+/** Slugs that belong to the `user` payer catalog (personal + free). */
+export function isUserCatalogSlug(value: string): boolean {
+  return isClerkUserPlanKey(value) || isClerkFreeUserPlanSlug(value);
+}
+
+/** Slugs that belong to the `organization` payer catalog (team tiers + free org). */
+export function isOrgCatalogSlug(value: string): boolean {
+  return isClerkOrganizationPlanKey(value) || isClerkFreeOrgPlanSlug(value);
 }
