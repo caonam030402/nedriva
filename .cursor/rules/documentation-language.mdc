@@ -1,0 +1,34 @@
+---
+description: All developer-facing text (comments, rules, README, internal docs, Python) must be English — not Vietnamese or other languages
+globs: "**/*.{ts,tsx,js,mjs,md,mdc,py}"
+alwaysApply: true
+---
+
+# Documentation & comment language
+
+## Rules (English only)
+
+1. **Write in English** for:
+   - All `//` and `/** */` comments in application code (`src/`, `scripts/`, `app/` in Python services, root configs that explain behavior).
+   - **JSX / TSX** `{/* ... */}` comments.
+   - **Cursor rules** (`.cursor/rules/*.mdc`): `description`, headings, and body.
+   - **README.md** at the root of each package (e.g. `app/`, `worker/` — describe the **Nedriva** product by brand name where it helps, not only the folder name).
+   - **Internal developer docs** under `docs/**/*.md` (architecture, billing, setup).
+   - **JSDoc** (`@param`, `@returns`, descriptions).
+   - **Python** docstrings and `#` comments in `worker/` (and any other Python in the repo).
+
+2. **Do not translate** user-facing locale files (`src/locales/*.json`, marketing copy meant for end users). Those stay in their target language (e.g. `fr.json` in French).
+
+3. **Commit messages** default to English unless the team explicitly agrees otherwise.
+
+4. When a doc needs to **quote** non-English UI strings (e.g. Vietnamese labels for Clerk Dashboard), put them in a table or code block labeled as the **locale copy**, with surrounding explanation in English.
+
+## Rationale
+
+- One language for code, rules, and internal docs avoids mixed Vietnamese/English drift.
+- ESLint/Prettier and most tooling assume English examples.
+- AI assistants and collaborators share a single convention.
+
+## Check before finishing a task
+
+- Grep for Vietnamese diacritics in `src/`, `docs/`, `.cursor/rules/`, and `README.md`; fix any matches except inside `locales/*.json` or intentional quoted examples in English docs.

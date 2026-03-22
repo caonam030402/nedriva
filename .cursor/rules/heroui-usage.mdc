@@ -1,0 +1,358 @@
+---
+description: HeroUI v3 component usage rules — when to use HeroUI, when to write custom, and how to customize
+globs: **/*.tsx
+alwaysApply: false
+---
+
+# HeroUI v3 Usage Rules
+
+## Setup (installed)
+```
+@heroui/react@3.0.0-rc.1
+@heroui/styles@3.0.0-rc.1
+framer-motion (peer dependency)
+```
+
+`src/styles/global.css`:
+```css
+@import 'tailwindcss';
+@import '@heroui/styles';
+```
+
+No Provider wrapper needed — HeroUI v3 is CSS-first, there is no `<HeroUIProvider>`.
+
+---
+
+## Core Rules
+- If HeroUI has an equivalent component → **use HeroUI**, do not write a custom one
+- Only write custom components when app-specific logic or visuals are needed (see `shared-components.mdc`)
+- Always import from **individual packages** — never use the barrel `@heroui/react`
+
+---
+
+## UI Wrapper Rule — MANDATORY
+
+HeroUI v3 uses compound component patterns (e.g. `Switch.Control + Switch.Thumb`, `Checkbox.Control + Checkbox.Indicator`).
+**Never use HeroUI compound components directly in feature code.**
+Instead, always wrap them once in `src/components/ui/` and import the wrapper everywhere.
+
+```
+src/components/ui/
+  Button.tsx           ← wraps @heroui/react/button
+  Checkbox.tsx         ← wraps @heroui/react/checkbox (Control + Indicator + Content)
+  InfoTooltip.tsx      ← wraps @heroui/react/tooltip (Trigger + Content + arrow)
+  PillGroup.tsx        ← reusable pill button group (uses InfoTooltip)
+  SegmentedControl.tsx ← segmented button bar (native, no HeroUI)
+  Slider.tsx           ← wraps @heroui/react/slider (Track + Fill + Thumb sized)
+  Switch.tsx           ← wraps @heroui/react/switch (Control + Thumb)
+  Tabs.tsx             ← custom tab bar + content via render prop
+```
+
+**Rules:**
+- **NEVER** import `@heroui/react/switch`, `@heroui/react/checkbox`, `@heroui/react/slider`, `@heroui/react/tooltip` directly in feature components
+- **ALWAYS** import from `@/components/ui/` instead
+- If a new HeroUI compound component is needed → create a wrapper in `src/components/ui/` first
+
+```tsx
+// ❌ WRONG — compound boilerplate leaks into feature code
+import { Switch } from '@heroui/react/switch';
+<Switch isSelected={v} onChange={set}>
+  <Switch.Control><Switch.Thumb /></Switch.Control>
+</Switch>
+
+// ✅ CORRECT — clean wrapper
+import { Switch } from '@/components/ui/Switch';
+<Switch isSelected={v} onChange={set} label="Upscale" />
+```
+
+```tsx
+// ✅ CORRECT
+import { Button } from '@heroui/react/button';
+import { Input } from '@heroui/react/input';
+
+// ❌ WRONG — barrel import increases bundle size
+import { Button, Input } from '@heroui/react';
+```
+
+---
+
+## Theming — override in `src/styles/global.css`
+
+Map HeroUI's internal tokens to the app's `@theme` design tokens.
+Add this block **after** `@import '@heroui/styles'`:
+
+```css
+:root {
+  /* Map HeroUI primary → app brand violet */
+  --heroui-primary:      theme(colors.brand);      /* = var(--color-brand) */
+  --heroui-primary-200:  theme(colors.brand-light);
+  --heroui-primary-700:  theme(colors.brand-dim);
+
+  /* Backgrounds */
+  --heroui-background:   theme(colors.base);       /* = var(--color-base) */
+  --heroui-content1:     theme(colors.surface);
+  --heroui-content2:     theme(colors.elevated);
+
+  /* Divider */
+  --heroui-divider:      rgb(255 255 255 / 0.06);  /* = border-white/6 */
+}
+```
+
+---
+
+## Full Component Reference
+
+### Layout & Structure
+| Component | Import | When to use |
+|-----------|--------|-------------|
+| `Card, CardHeader, CardBody, CardFooter` | `@heroui/react/card` | Standard cards (use `GlassCard` for custom dark glass effect) |
+| `Divider` | `@heroui/react/divider` | Section separators |
+| `Spacer` | `@heroui/react/spacer` | Vertical/horizontal whitespace |
+| `ScrollShadow` | `@heroui/react/scroll-shadow` | Scrollable container with fade shadow |
+| `Navbar, NavbarBrand, NavbarContent, NavbarItem, NavbarMenuToggle, NavbarMenu, NavbarMenuItem` | `@heroui/react/navbar` | Top navigation bar (replaces custom `Navbar.tsx`) |
+
+### Inputs & Forms
+| Component | Import | When to use |
+|-----------|--------|-------------|
+| `Button, ButtonGroup` | `@heroui/react/button` | Every button in the app |
+| `Input` | `@heroui/react/input` | Single-line text input |
+| `Textarea` | `@heroui/react/textarea` | Multi-line text input |
+| `NumberInput` | `@heroui/react/number-input` | Numeric input (upscale factor) |
+| `InputOtp` | `@heroui/react/input-otp` | OTP / verification codes |
+| `Select, SelectItem, SelectSection` | `@heroui/react/select` | Dropdown selection (output format, scale factor) |
+| `Checkbox, CheckboxGroup` | `@heroui/react/checkbox` | Single or grouped checkboxes |
+| `RadioGroup, Radio` | `@heroui/react/radio` | Single-choice selection |
+| `Switch` | `@heroui/react/switch` | On/off toggle |
+| `Slider` | `@heroui/react/slider` | Range control (enhancement level, quality) |
+| `Form` | `@heroui/react/form` | Form wrapper with validation support |
+| `Autocomplete, AutocompleteItem` | `@heroui/react/autocomplete` | Input with suggestions |
+
+### Dates & Times
+| Component | Import | When to use |
+|-----------|--------|-------------|
+| `DateInput` | `@heroui/react/date-input` | Typed date entry |
+| `DatePicker` | `@heroui/react/date-picker` | Date selection with popup |
+| `DateRangePicker` | `@heroui/react/date-range-picker` | Date range selection |
+| `TimeInput` | `@heroui/react/time-input` | Time entry |
+| `Calendar` | `@heroui/react/calendar` | Full calendar view |
+| `RangeCalendar` | `@heroui/react/range-calendar` | Calendar with range selection |
+
+### Feedback & Status
+| Component | Import | When to use |
+|-----------|--------|-------------|
+| `Spinner` | `@heroui/react/spinner` | Loading indicator |
+| `Progress` | `@heroui/react/progress` | Linear progress bar |
+| `CircularProgress` | `@heroui/react/circular-progress` | Circular progress ring |
+| `Skeleton` | `@heroui/react/skeleton` | Content placeholder while loading |
+| `Alert` | `@heroui/react/alert` | Inline status message (success/error/warning) |
+| `Toast` | `@heroui/react/toast` | Auto-dismissing notification popup |
+| `Chip` | `@heroui/react/chip` | Status label, tag, badge |
+| `Badge` | `@heroui/react/badge` | Dot/count overlay on an icon (notification count) |
+
+### Overlays & Popups
+| Component | Import | When to use |
+|-----------|--------|-------------|
+| `Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure` | `@heroui/react/modal` | Dialog / popup |
+| `Drawer` | `@heroui/react/drawer` | Side panel that slides in |
+| `Popover, PopoverTrigger, PopoverContent` | `@heroui/react/popover` | Small popup anchored to an element |
+| `Tooltip` | `@heroui/react/tooltip` | Hover hint |
+| `Dropdown` (compound: `.Trigger`, `.Popover`, `.Menu`, `.Item`, …) | `@heroui/react/dropdown` | Dropdown menu |
+| **`ActionsDropdown`** | `@/components/ui/ActionsDropdown` | HeroUI `Dropdown` — **required** `icon` (caller passes e.g. `<MoreVertical />`), `ariaLabel`, `items`, optional `onMenuAction` / `onOpenChange` |
+
+### Navigation
+| Component | Import | When to use |
+|-----------|--------|-------------|
+| `Tabs, Tab` | `@heroui/react/tabs` | Tab-based navigation |
+| `Breadcrumbs, BreadcrumbItem` | `@heroui/react/breadcrumbs` | Hierarchical path indicator |
+| `Pagination` | `@heroui/react/pagination` | Page navigation (job history, gallery) |
+| `Link` | `@heroui/react/link` | Anchor with HeroUI styling |
+
+### Data Display
+| Component | Import | When to use |
+|-----------|--------|-------------|
+| `Table, TableHeader, TableBody, TableColumn, TableRow, TableCell` | `@heroui/react/table` | Data tables (job history, pricing) |
+| `Avatar, AvatarGroup` | `@heroui/react/avatar` | User profile picture |
+| `User` | `@heroui/react/user` | Avatar + name + description row |
+| `Accordion, AccordionItem` | `@heroui/react/accordion` | FAQ, collapsible content |
+| `Listbox, ListboxItem, ListboxSection` | `@heroui/react/listbox` | Selection list |
+| `Image` | `@heroui/react/image` | Image with blur placeholder (when Next.js `<Image>` optimization is not needed) |
+| `Code` | `@heroui/react/code` | Inline code snippet |
+| `Snippet` | `@heroui/react/snippet` | Code block with copy button |
+| `Kbd` | `@heroui/react/kbd` | Keyboard shortcut key display |
+
+---
+
+## Common Patterns for This App
+
+### Button — all states
+```tsx
+import { Button } from '@heroui/react/button';
+
+<Button color="primary" radius="full" className="font-semibold">Get Started</Button>
+<Button variant="bordered" radius="full" color="primary">Learn More</Button>
+<Button color="primary" isLoading>Processing…</Button>
+<Button color="primary" isDisabled={jobStatus === 'processing'}>Upscale</Button>
+```
+
+### Modal — confirm action, result preview
+```tsx
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@heroui/react/modal';
+
+const { isOpen, onOpen, onOpenChange } = useDisclosure();
+
+<Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur">
+  <ModalContent>
+    {(onClose) => (
+      <>
+        <ModalHeader>Confirm Processing</ModalHeader>
+        <ModalBody>This will use 2 credits. You have 18 remaining.</ModalBody>
+        <ModalFooter>
+          <Button variant="bordered" onPress={onClose}>Cancel</Button>
+          <Button color="primary" onPress={onClose}>Confirm</Button>
+        </ModalFooter>
+      </>
+    )}
+  </ModalContent>
+</Modal>
+```
+
+### Chip — job status, credit cost
+```tsx
+import { Chip } from '@heroui/react/chip';
+
+<Chip color="default"   variant="flat"     size="sm">Pending</Chip>
+<Chip color="primary"   variant="flat"     size="sm">Processing…</Chip>
+<Chip color="success"   variant="flat"     size="sm">Completed</Chip>
+<Chip color="danger"    variant="flat"     size="sm">Failed</Chip>
+<Chip color="secondary" variant="bordered" startContent={<span>✦</span>}>2 credits</Chip>
+```
+
+### Alert — inline status messages
+```tsx
+import { Alert } from '@heroui/react/alert';
+
+<Alert color="success" title="Processing complete!" description="Your image is ready to download." />
+<Alert color="danger"  title="Processing failed"    description="File too large or unsupported format." />
+<Alert color="warning" title="Low credits"          description="You only have 2 credits remaining." />
+```
+
+### Toast — auto-dismiss notifications
+```tsx
+import { ToastProvider, addToast } from '@heroui/react/toast';
+
+// Add once in root layout
+<ToastProvider />
+
+// Call from anywhere
+addToast({ title: 'Added to queue',       color: 'primary' });
+addToast({ title: 'Upscale complete!',    color: 'success' });
+addToast({ title: 'Processing failed',    color: 'danger', timeout: 8000 });
+```
+
+### Select — output format, scale factor
+```tsx
+import { Select, SelectItem } from '@heroui/react/select';
+
+<Select label="Scale factor" variant="bordered" color="primary" defaultSelectedKeys={['2x']}>
+  <SelectItem key="2x">2x — fast, 1 credit</SelectItem>
+  <SelectItem key="4x">4x — 2 credits</SelectItem>
+  <SelectItem key="8x">8x — 4 credits</SelectItem>
+  <SelectItem key="16x">16x — up to 512MP, 8 credits</SelectItem>
+</Select>
+```
+
+### Slider — enhancement level, quality
+```tsx
+import { Slider } from '@heroui/react/slider';
+
+<Slider
+  label="Enhancement level"
+  color="primary"
+  step={10}
+  minValue={0}
+  maxValue={100}
+  defaultValue={70}
+  className="max-w-md"
+/>
+```
+
+### Table — job history
+```tsx
+import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell } from '@heroui/react/table';
+
+<Table aria-label="Job history" selectionMode="none">
+  <TableHeader>
+    <TableColumn>Image</TableColumn>
+    <TableColumn>Operation</TableColumn>
+    <TableColumn>Status</TableColumn>
+    <TableColumn>Date</TableColumn>
+    <TableColumn>Credits</TableColumn>
+  </TableHeader>
+  <TableBody>
+    {jobs.map(job => (
+      <TableRow key={job.id}>
+        <TableCell>...</TableCell>
+      </TableRow>
+    ))}
+  </TableBody>
+</Table>
+```
+
+### Skeleton — loading placeholder
+```tsx
+import { Skeleton } from '@heroui/react/skeleton';
+
+<Skeleton className="rounded-[var(--radius-lg)]">
+  <div className="h-48 w-full" />
+</Skeleton>
+```
+
+### Tabs — switch between views or operations
+```tsx
+import { Tabs, Tab } from '@heroui/react/tabs';
+
+<Tabs color="primary" variant="underlined" aria-label="Operations">
+  <Tab key="upscale"   title="Upscale" />
+  <Tab key="enhance"   title="Enhance" />
+  <Tab key="restore"   title="Restore" />
+  <Tab key="remove-bg" title="Remove BG" />
+</Tabs>
+```
+
+### Pagination — job history, gallery
+```tsx
+import { Pagination } from '@heroui/react/pagination';
+
+<Pagination total={totalPages} color="primary" page={page} onChange={setPage} />
+```
+
+---
+
+## Framer Motion — animations
+
+```tsx
+import { motion } from 'framer-motion';
+
+// Fade in on mount
+<motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+  <GlassCard>...</GlassCard>
+</motion.div>
+
+// Stagger list items
+const container = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
+const item = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } };
+
+<motion.div variants={container} initial="hidden" animate="show">
+  {items.map(i => <motion.div key={i.id} variants={item}>{/* ... */}</motion.div>)}
+</motion.div>
+```
+
+Use for: page transitions, card reveals, before/after slider handle, stagger feature grids.
+Do NOT use for: loading spinners (→ HeroUI `Spinner`), simple hover colors (→ Tailwind `transition`).
+
+---
+
+## Do Not
+- Do NOT override HeroUI styles with `!important`
+- Do NOT write custom Button / Input / Modal / Table — use HeroUI
+- Do NOT import from the `@heroui/react` barrel when an individual package is available

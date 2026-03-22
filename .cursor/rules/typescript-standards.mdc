@@ -1,0 +1,101 @@
+---
+description: TypeScript coding standards for this project
+globs: **/*.ts,**/*.tsx
+alwaysApply: false
+---
+
+# TypeScript Standards
+
+## Strict Rules
+- **Comments & JSDoc in English** — see `.cursor/rules/documentation-language.mdc`
+- **No `any`** — use type narrowing, generics, or `unknown` + assertions
+- **No `try/catch`** unless truly necessary (network failures, external calls)
+- **No type casting** — narrow types instead
+- **No `process.env` reads** — use `src/libs/core/Env.ts` only
+- **`type` over `interface`** — enforced by ESLint
+
+## Imports
+- Absolute imports with `@/` for cross-directory: `import { db } from '@/libs/core/DB'` (see `lib-layout` rule for `src/libs/` structure)
+- Relative `./foo` for same-directory imports only
+- Zod: always `import type * as z from 'zod'` (type-only)
+- Named exports only — no default exports except Next.js pages/layouts/`global-error`
+
+## Functions & Types
+- Let TypeScript infer return types unless explicit annotation adds clarity
+- Use options object for 3+ params, optional flags, or ambiguous args:
+
+```typescript
+// ❌ BAD
+function create(name: string, age: number, active: boolean) {}
+
+// ✅ GOOD
+function create(options: { name: string; age: number; active: boolean }) {}
+```
+
+- `noUncheckedIndexedAccess` is on — array access returns `T | undefined`, handle it
+
+## Enums & Types — file structure
+
+Keep enums and types **global and separate**:
+
+```
+src/
+  enums/
+    enhancer.ts     ← E-prefixed enums for the enhancer feature
+    billing.ts      ← E-prefixed enums for billing, etc.
+  types/
+    api/            ← shared HTTP/list contracts (`pagination.ts`, `index.ts` barrel)
+    enhancer/       ← `state.ts` (UI/domain) + `*Api.ts` (wire JSON) + `index.ts` barrel
+  libs/
+    i18n/           ← runtime next-intl (`I18n.ts`) + `next-intl-app-config.ts` (AppConfig augmentation)
+```
+
+Rules:
+- **Enum files** live in `src/enums/` — one file per feature domain.
+- **Enum names** always prefixed with `E`: `EUpscaleModel`, `ESizeMode`, `EQueueStatus`.
+- **Type modules** live in `src/types/<module>/` — use an `index.ts` barrel for public exports; split when a module grows.
+- **Feature API JSON** (request/response bodies your Next routes or Python proxy return) → `src/types/<module>/<endpoint>Api.ts` (e.g. `enhancer/historyApi.ts`, `enhancer/jobApi.ts`, `enhancer/processApi.ts`). **Do not** define those shapes inside `src/libs/apis/*` — fetchers only import types from `@/types/...`.
+- Types may import enums via `import type { EFoo } from '@/enums/...'`.
+- Never use string-union types for stable domain values — always `enum`.
+
+```typescript
+// ❌ BAD — string-union, no auto-complete, fragile to rename
+type UpscaleModel = 'prime' | 'gentle' | 'old_photo';
+
+// ✅ GOOD — E-prefix enum in src/enums/enhancer.ts
+export enum EUpscaleModel {
+  Prime    = 'prime',
+  Gentle   = 'gentle',
+  OldPhoto = 'old_photo',
+}
+```
+
+Feature folders use a `constants.ts` (not `types.ts`) for runtime values and helpers.
+`types.ts` is **never** the place for functions or constants:
+
+```
+src/components/dashboard/enhance-image/
+  constants.ts         ← INITIAL_OPS, model lists, calcCredits(), etc.
+  EnhancerUploadZone.tsx
+  OperationsPanel.tsx  ← imports from @/enums, @/types, ./constants
+  PresetsPanel.tsx
+  QueueRow.tsx
+```
+
+- Import enums directly: `import { EUpscaleModel } from '@/enums/enhancer'`
+- Import types from the barrel or the concrete file: `import type { OpsState } from '@/types/enhancer'` or `import type { EnhancerJobStatusBody } from '@/types/enhancer/jobApi'` when you want a stable path for one endpoint.
+- Import feature constants: `import { INITIAL_OPS } from './constants'`
+- **Never** put functions or constants inside a `types.ts` file
+
+## Component Size & Splitting
+- Keep each `.tsx` file under ~150 lines.
+- Extract sub-components to their own files when:
+  - The sub-component has its own state
+  - The sub-component is independently testable
+  - The parent file would exceed 150 lines without the extraction
+- Naming: match file name to the exported component name (`OperationsPanel.tsx` exports `OperationsPanel`).
+
+## File Naming
+- PascalCase for components, libs, models, validations: `CounterForm.tsx`, `DB.ts`
+- camelCase for utilities: `AppConfig.ts`, `Helpers.ts`
+- Test suffixes: `.test.ts` (unit), `.spec.ts` (integration), `.e2e.ts` (E2E)

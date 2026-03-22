@@ -1,0 +1,31 @@
+---
+description: src/libs folder layout — core, i18n, pagination, persistence (DB modules), apis (browser)
+globs: src/libs/**/*
+alwaysApply: false
+---
+
+# `src/libs` layout
+
+Keep **flat files only at `src/libs/` root** for barrels if needed; group everything else by role.
+
+| Folder | Contents |
+|--------|-----------|
+| **`libs/core/`** | App infrastructure: `Env`, `DB`, `Logger`, `Arcjet`, `ClerkAppearance` |
+| **`libs/i18n/`** | `I18n.ts` (next-intl request config), `next-intl-app-config.ts` (TS `AppConfig` augmentation), `I18nRouting`, `I18nNavigation` |
+| **`libs/pagination/`** | Shared list API helpers (`apiPagination.ts`) + types live in `src/types/api/pagination.ts` |
+| **`libs/persistence/`** | **Server** DB + related services, **by module**: `users/` (Clerk sync), `enhancer/` (jobs table, Python client, history builder) |
+| **`libs/persistence/users/`** | `syncClerkAppUser.ts` — barrel: `@/libs/persistence/users` |
+| **`libs/persistence/enhancer/`** | `enhancerProcessedRecords`, `enhancerHistoryList`, `processingClient` — barrel: `@/libs/persistence/enhancer` |
+| **`libs/apis/`** | **Browser** HTTP clients only — `httpClient.ts` + per-module folders (e.g. `apis/enhancer/`). **Types** for JSON bodies/responses live in `src/types/<module>/*Api.ts`; fetch files `import type` from there. |
+| **`libs/react-query/`** | `QueryClient` factory for RSC + browser only |
+| **`constants/reactQueryKeys.ts`** | RQ key factories + shared key param types (e.g. `CursorOrPageListKeyParams`) |
+| **`utils/normalizeListPaginationKeyParams.ts`** | Reusable cursor/offset → stable key fragment for any paginated list |
+| **`src/utils/`** | Shared helpers (`Helpers`, `Routes`, `DBConnection`, `downloadUrlAsFile`, …) — single `utils` tree at app root |
+
+## Rules
+
+1. New **server persistence** for a domain → `libs/persistence/<module>/` (mirror `users`, `enhancer`).
+2. New **client fetchers** for `/api/*` → `libs/apis/<module>/` (add matching types in `src/types/<module>/<name>Api.ts` when the contract is new).
+3. Do not mix **server secrets** (Python key, DB) into `libs/apis/` — keep in route handlers + `libs/persistence/*`.
+
+See also: `.cursor/rules/react-query-nextjs.mdc`.

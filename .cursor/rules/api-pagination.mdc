@@ -1,0 +1,72 @@
+---
+description: Paginated list API shape (cursor/page) — aligned BE/FE types and helpers
+globs: src/app/api/**/*.ts,src/types/api/**/*.ts,src/libs/pagination/apiPagination.ts,src/**/*.tsx
+alwaysApply: false
+---
+
+# Paginated list API — project standard
+
+## Types (single source of truth)
+
+- **`src/types/api/pagination.ts`** — `PaginatedListResponse<T>`, `ListPaginationMeta` (single object; unused fields `null`), `ListPaginationQuery` (barrel: `@/types/api`).
+- **`src/libs/pagination/apiPagination.ts`** — `parseLimitParam`, `encodeKeysetCursor` / `decodeKeysetCursor`, `buildCursorPaginatedResponse`, `buildPagePaginatedResponse`.
+- **`src/libs/pagination/listPageQuery.ts`** — shared `page` / `limit` URL + parsing (`parsePageParam`, `LIST_PAGE_QUERY_KEY`, …) — no Node imports (safe on client).
+
+## JSON body for any **list** endpoint (200)
+
+```ts
+{
+  items: T[];
+  pagination: {
+    limit: number;
+    hasMore: boolean;
+    nextCursor: string | null;
+    page: number | null;
+    total: number | null;
+    totalPages: number | null;
+  };
+}
+```
+
+- **Cursor list:** `nextCursor` / `hasMore` meaningful; `page`, `total`, `totalPages` = `null`.
+- **Page list:** `page` / `total` / `totalPages` / `hasMore` meaningful; `nextCursor` = `null`.
+- Use **`items`** for the array — not `data: []` for lists (avoids confusion with a single object).
+- Invalid pagination query (422): `{ error: string, details?: { field, message }[] }` — reuse `PaginationValidationError` where useful.
+
+## Modes (same JSON shape)
+
+| Mode | When | Query |
+|------|------|--------|
+| **Cursor** | Feeds, large histories, avoid slow deep `OFFSET` | `?limit=&cursor=` |
+| **Page** | Page numbers + `total` / shareable URLs | `?limit=&page=` (1-based) |
+
+- **`limit`**: 1…`MAX_LIST_LIMIT` (100); default 20 via helper, or per-route default (e.g. history = 30).
+- **Cursor**: opaque server-generated string; the client only copies `pagination.nextCursor` into `?cursor=` — **never** decodes it.
+- **Keyset (cursor)**: fetch `limit + 1` rows, `hasMore = length > limit`, `nextCursor` derived from the **last item of the returned page** (after slicing).
+- **Page**: server maps `(page - 1) * limit` to SQL internally; do not expose raw `offset` in the public API.
+
+## Backend (Next.js route)
+
+1. Authenticate / validate input.
+2. `parseLimitParam(searchParams.get('limit'), defaultLimit)`.
+3. Cursor: `decodeKeysetCursor(...)` — if `cursor` is present but invalid → **422**.
+4. Page: `parsePageParam(searchParams.get('page'), 1)` from `listPageQuery`.
+5. Query DB (cursor: `limit + 1`; page: `LIMIT` + internal offset + `COUNT` as needed).
+6. `buildCursorPaginatedResponse` / `buildPagePaginatedResponse`.
+7. `NextResponse.json({ items: mapped, pagination })`.
+
+**Reference:** `GET /api/enhancer/history`, `GET /api/enhancer/runs`.
+
+**Concrete types for history:** `EnhancerHistoryListResponse` / `EnhancerHistoryItem` in `src/types/enhancer/historyApi.ts` (import via `@/types/enhancer`).
+
+## Frontend
+
+- Type the response as `PaginatedListResponse<YourItemType>` (e.g. `EnhancerHistoryListResponse`).
+- Next page (cursor): if `pagination.hasMore && pagination.nextCursor`, call again with `cursor=${encodeURIComponent(pagination.nextCursor)}`.
+- Next page (page): increment `page` query param (see `listPageQuery` + `router.replace`).
+- Infinite scroll: append `items`; reset when filters change (drop `cursor`).
+- Do not hard-code pagination field names outside the shared types — extend `libs/pagination/*` if the contract grows.
+
+## Code style
+
+Use **single quotes** in TS/TSX strings (matches `prettier.config.mjs` and ESLint).

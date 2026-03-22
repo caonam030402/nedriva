@@ -1,0 +1,79 @@
+@layer theme, base, clerk, components, utilities; /* clerk layer must be declared before HeroUI imports */
+
+@import 'tailwindcss';
+@import '@heroui/styles';
+
+@theme {
+  /* ── Backgrounds ──────────────────────────────────────── */
+  --color-page:     #09080f;   /* bg-page     — page background      */
+  --color-surface:  #120f1e;   /* bg-surface  — card, panel          */
+  --color-elevated: #1c1830;   /* bg-elevated — modal, dropdown      */
+
+  /* ── Brand (violet/purple) ───────────────────────────── */
+  --color-brand:       #8b5cf6; /* bg-brand / text-brand / border-brand */
+  --color-brand-light: #a78bfa; /* text-brand-light                   */
+  --color-brand-dim:   #6d28d9; /* bg-brand-dim                       */
+
+  /* ── Accent (pink/magenta) ───────────────────────────── */
+  --color-accent:       #c026d3; /* text-accent                       */
+  --color-accent-light: #e879f9; /* text-accent-light                 */
+
+  /* ── Text ────────────────────────────────────────────── */
+  --color-foreground: #ffffff;   /* text-foreground — headings, labels */
+  --color-muted:      #a1a1b5;   /* text-muted      — body text        */
+  --color-subtle:     #6b6b80;   /* text-subtle     — hints, meta      */
+  --color-inverse:    #09080f;   /* text-inverse    — text on brand bg */
+
+  /* ── Status ──────────────────────────────────────────── */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error:   #ef4444;
+  --color-info:    #3b82f6;
+
+  /* ── Border Radius ───────────────────────────────────── */
+  --radius-ui-sm: 6px;    /* rounded-ui-sm */
+  --radius-ui-md: 10px;   /* rounded-ui-md */
+  --radius-card:  16px;   /* rounded-card  */
+  --radius-ui-xl: 24px;   /* rounded-ui-xl */
+  --radius-pill:  9999px; /* rounded-pill  */
+
+  /* ── Shadows ─────────────────────────────────────────── */
+  --shadow-card: 0 4px 24px rgb(0 0 0 / 0.4); /* shadow-card */
+  --shadow-cta:  0 0 20px rgb(139 92 246 / 0.5); /* shadow-cta */
+}
+
+/* rgba + gradient values — cannot live in @theme */
+:root {
+  --color-brand-glow: rgba(139, 92, 246, 0.35);
+  --color-bg-overlay: rgba(18, 15, 30, 0.85);
+
+  --gradient-hero:
+    radial-gradient(ellipse at 30% 50%, rgba(192, 38, 211, 0.4) 0%, transparent 60%),
+    radial-gradient(ellipse at 75% 40%, rgba(109, 40, 217, 0.5) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 80%, rgba(139, 92, 246, 0.2) 0%, transparent 50%);
+  --gradient-cta:   linear-gradient(135deg, #8b5cf6 0%, #c026d3 100%);
+  --gradient-brand: linear-gradient(135deg, #6d28d9 0%, #8b5cf6 50%, #c026d3 100%);
+  --gradient-text:  linear-gradient(90deg, #a78bfa, #e879f9);
+
+  --shadow-brand: 0 0 30px var(--color-brand-glow);
+}
+
+/* ── Custom scrollbar ─────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}

@@ -1,0 +1,71 @@
+---
+description: Image processing feature patterns — operations, jobs, uploads, and result display
+alwaysApply: true
+---
+
+# Image Processing Feature Patterns
+
+## Operations
+Each operation is a string literal union — use this type everywhere:
+
+```typescript
+type ImageOperation =
+  | 'upscale'
+  | 'enhance'
+  | 'sharpen'
+  | 'denoise'
+  | 'restore'
+  | 'face_enhance'
+  | 'remove_bg';
+```
+
+## Job Lifecycle
+```
+upload → create job (pending) → queue → process (processing) → store result → complete/fail
+```
+- Jobs are **async** — never block the HTTP response waiting for processing
+- After job creation, API returns `{ jobId }` immediately (202 Accepted)
+- Client polls `GET /api/jobs/[jobId]` or uses Server-Sent Events for status updates
+- Never process images synchronously in an API route handler
+
+## Upscale Constraints
+- Max scale factors: `2x`, `4x`, `8x`, `16x`
+- Max output resolution: ~512 megapixels
+- Input: JPEG, PNG, WebP only
+- Validate file size and dimensions **before** creating a job — reject oversized inputs early
+
+## File Upload Pattern
+- Use `multipart/form-data` for image upload
+- Validate MIME type server-side (not just extension) — use magic bytes
+- Store original in object storage (S3-compatible), never in the DB
+- DB stores only the storage key/URL, not the binary
+- Accepted MIME types: `image/jpeg`, `image/png`, `image/webp`
+- Max upload size: enforce in both client (early feedback) and server (hard limit)
+
+## Credit Costs (reference)
+| Operation | Base credits |
+|-----------|-------------|
+| upscale 2x | 1 |
+| upscale 4x | 2 |
+| upscale 8x | 4 |
+| upscale 16x | 8 |
+| enhance / sharpen / denoise | 1 |
+| restore | 2 |
+| face_enhance | 2 |
+| remove_bg | 1 |
+
+- Deduct credits **atomically** when creating the job — refund on failure
+- Check credit balance before accepting a job; return 402 if insufficient
+
+## Result Display
+- Show before/after slider for all operations except `remove_bg`
+- `remove_bg` result: show on checkered background (transparent)
+- Always display original dimensions and output dimensions
+- Provide download button for processed result
+- Results expire after 7 days — show expiry warning
+
+## Progress / Status UI
+- Poll every 3 seconds while `status === 'processing'`
+- Show estimated wait time based on operation type and queue depth
+- On failure: show user-friendly error message + offer retry (refunds credits)
+- Never expose raw error details to the user — log with `Logger`, show generic message

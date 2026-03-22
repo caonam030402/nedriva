@@ -1,0 +1,104 @@
+---
+description: TanStack React Query in Next.js App Router — RSC prefetch, keys, apis modules, wrappers
+globs: src/hooks/**/*.ts,src/hooks/**/*.tsx,src/libs/apis/**/*.ts,src/libs/react-query/**/*.ts,src/constants/reactQueryKeys.ts,src/app/**/page.tsx
+alwaysApply: false
+---
+
+# React Query + Next.js 16 (App Router)
+
+## Goals
+
+- **Server**: request-scoped `QueryClient` + `prefetchQuery` + `dehydrate` for fast first paint.
+- **Client**: stable `QueryClient` from `ReactQueryProvider` + `HydrationBoundary` state.
+- **Single `fetch` surface**: `apiFetch` in `src/libs/apis/httpClient.ts` for cookies, JSON, and global error hooks (toast/logging).
+
+## Folder layout
+
+| Path | Role |
+|------|------|
+| `src/constants/apiRoutes.ts` | **API path constants** — `apiRoutes.*`, `API_BASE_PATH`, `API_WEBHOOKS_PREFIX`. No `/api/...` string literals in fetchers. |
+| `src/constants/reactQueryKeys.ts` | **Query key factories** — shared by RSC prefetch and client hooks. Never inline raw string arrays in pages. |
+| `src/libs/apis/httpClient.ts` | `apiFetch`, `ApiError`, `setApiErrorListener` |
+| `src/libs/apis/<module>/` | **Per-domain browser API** — e.g. `enhancer/`: `history.ts`, `process.ts`, `job.ts` (functions only; types come from `src/types/<module>/*Api.ts`). |
+| `src/libs/apis/<module>/index.ts` | Barrel — re-exports fetchers + re-exports shared types from `@/types/<module>` for convenience. |
+| `src/libs/react-query/queryClient.ts` | `makeQueryClient()`, `getQueryClient()` (React `cache`) |
+| `src/hooks/react-query/useAppQuery.ts` | Typed wrapper — app-wide `useQuery` defaults |
+| `src/hooks/react-query/useAppMutation.ts` | Typed wrapper — app-wide `useMutation` defaults |
+| `src/hooks/react-query/queries/<module>/` | `useAppQuery` hooks per domain (e.g. `queries/enhance/`) |
+| `src/hooks/react-query/mutations/<module>/` | `useAppMutation` + imperative flows per domain (e.g. `mutations/enhance/`) |
+| `src/components/providers/ReactQueryProvider.tsx` | `QueryClientProvider` (client) |
+| `src/components/providers/QueryHydrationBoundary.tsx` | `HydrationBoundary` (client) |
+
+### Naming
+
+- **`apis` folder**: plural — holds all HTTP client modules.
+- **Module folders** (`enhancer`, …): **lowercase** — matches URL segments (`/api/enhancer/...`) and avoids case issues on disk. **Files** stay **camelCase** (`history.ts`, `job.ts`).
+
+## Rules
+
+1. **`queryKey`** must come from `reactQueryKeys` (or a colocated factory re-exported there) so prefetch and `useQuery` never drift.
+2. **Private / user-specific data**: prefetch in RSC with `auth()` (or server-only data loaders), not by scraping cookies into ad-hoc `fetch`. Reuse the same payload as the HTTP API when possible — e.g. `getEnhancerHistoryListResponse()` shared by `GET /api/...` and `prefetchQuery`.
+3. **Client reads / writes**: import from `@/libs/apis/<module>` — each module owns every verb (GET/POST) for that domain.
+4. **Polling / noisy endpoints**: use plain `fetch` inside the module when `apiFetch` would spam global error listeners (see `fetchEnhancerJobStatus`).
+5. **Do not** call `fetch('/api/...')` from components — use `libs/apis/*` + `apiRoutes`.
+6. **Global errors**: register `setApiErrorListener` once (e.g. in a small client provider) for toast/Sentry — optional.
+
+## RSC prefetch pattern (reference)
+
+```tsx
+// app/[locale]/(auth)/boost/page.tsx (example)
+const queryClient = getQueryClient();
+const { userId } = await auth();
+if (userId) {
+  await queryClient.prefetchQuery({
+    queryKey: reactQueryKeys.enhancer.historyList({
+      limit: ENHANCER_HISTORY_DEFAULT_LIMIT,
+      cursor: null,
+      page: null,
+    }),
+    queryFn: () => getEnhancerHistoryListResponse(userId, ENHANCER_HISTORY_DEFAULT_LIMIT, null),
+  });
+}
+return (
+  <QueryHydrationBoundary state={dehydrate(queryClient)}>
+    <ClientTree />
+  </QueryHydrationBoundary>
+);
+```
+
+## Client hook pattern
+
+Import from `react-query/queries/<module>/` or `react-query/mutations/<module>/`:
+
+```tsx
+'use client';
+import { useEnhancerHistoryQuery } from '@/hooks/react-query/queries/enhance';
+import { useProcessJob } from '@/hooks/react-query/mutations/enhance';
+```
+
+Lower-level pattern (inside `queries/<module>/use*.ts`):
+
+```tsx
+import { useAppQuery } from '@/hooks/react-query/useAppQuery';
+import { reactQueryKeys } from '@/constants/reactQueryKeys';
+import { fetchEnhancerHistory } from '@/libs/apis/enhancer';
+
+useAppQuery({
+  queryKey: reactQueryKeys.enhancer.historyList({ limit: 30, cursor: null, page: null }),
+  queryFn: () => fetchEnhancerHistory({ limit: 30, cursor: null }),
+});
+```
+
+## Next.js cache tags / Server Actions
+
+- Use **`updateTag` / `revalidateTag`** for **RSC** cached segments when a Server Action mutates data.
+- Use **`queryClient.invalidateQueries`** for **React Query** cache on the client.
+- Keep both in mind when mixing `"use cache"` RSC data with React Query client data.
+
+## Types
+
+- Prefer explicit generics on `useAppQuery` / `useAppMutation` only when inference fails.
+- **Wire / JSON shapes** for client APIs live in `src/types/<feature>/*Api.ts` — hooks and `libs/apis` import from `@/types/enhancer` (barrel) or `@/types/enhancer/historyApi` / `jobApi` / `processApi` for a single endpoint.
+- Example: `EnhancerHistoryListResponse`, `EnhancerJobStatusBody`, `SubmitEnhancerProcessResponse` — all under `src/types/enhancer/`, not in `libs/apis/enhancer/*.ts`.
+
+See also: `.cursor/rules/api-pagination.mdc`, `.cursor/rules/documentation-language.mdc`.

@@ -1,0 +1,49 @@
+---
+description: Testing conventions for Vitest, Playwright integration and E2E tests
+globs: **/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.e2e.ts
+alwaysApply: false
+---
+
+# Testing Conventions
+
+## Three Test Tiers
+
+| Tier | Suffix | Location | Runner |
+|------|--------|----------|--------|
+| Unit / Component | `.test.ts` / `.test.tsx` | Co-located with source | Vitest |
+| Integration | `.spec.ts` | `tests/integration/` | Playwright (via Vitest) |
+| E2E | `.e2e.ts` | `tests/e2e/` | Playwright |
+
+## Unit Tests (Vitest)
+- Pure `.ts` tests run in Node environment
+- `.tsx` component tests run in real Chromium (browser mode via `vitest-browser-react`)
+- Title format: **sentence case**, "verb + object + context"
+
+```typescript
+describe('CounterForm', () => {
+  it('increments the counter by 1 when submitted', async () => {});
+  it('shows validation error when value is out of range', async () => {});
+});
+```
+
+## Integration Tests
+- Call API routes via `page.request.put(url, { data: {...} })`
+- Pass `x-e2e-random-id` header for DB row isolation:
+
+```typescript
+const randomId = faker.string.uuid();
+await page.request.put('/en/api/counter', {
+  data: { increment: 1 },
+  headers: { 'x-e2e-random-id': randomId },
+});
+```
+
+## E2E Tests (Playwright)
+- Always use `faker` to generate unique IDs: `const randomId = faker.string.uuid()`
+- Set `x-e2e-random-id` cookie or header to isolate DB rows across parallel runs
+- Use `page.goto()` → interact → assert pattern
+- Visual tests capture screenshots for regression detection
+
+## Storybook
+- Stories co-located with component: `ComponentName.stories.tsx`
+- Run via `@storybook/addon-vitest`

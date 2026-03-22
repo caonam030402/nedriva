@@ -1,0 +1,8 @@
+# Heavy layer — pinned so Docker cache is never invalidated unless these change.
+# Installed separately BEFORE requirements.txt so app code changes don't retrigger this.
+#
+# torch 2.1 + torchvision 0.16 = last versions that still ship functional_tensor
+# → no compatibility shim needed.
+# PyPI index works for both linux/arm64 (Mac M-series) and linux/amd64 (GPU servers).
+torch==2.1.2
+torchvision==0.16.2

@@ -1,0 +1,61 @@
+---
+description: Internationalization patterns using next-intl in this project
+globs: src/app/**/*.tsx,src/components/**/*.tsx,src/templates/**/*.tsx,src/locales/**
+alwaysApply: false
+---
+
+# Internationalization (i18n) Patterns
+
+## Setup
+- Library: **next-intl v4**
+- Locales: `['en', 'fr']`, default `'en'`
+- Prefix strategy: `as-needed` — English has no prefix (`/about`), French prefixed (`/fr/about`)
+- Translation files: `src/locales/en.json` and `src/locales/fr.json`
+- **TS `AppConfig` augmentation** (Locale + Messages typing): `src/libs/i18n/next-intl-app-config.ts` — colocated with `I18n.ts` / routing, **not** under `src/types/`.
+
+## Usage in Components
+
+**Server components** — use `getTranslations`:
+```tsx
+import { getTranslations } from 'next-intl/server';
+
+const Page = async (props: { params: Promise<{ locale: string }> }) => {
+  const { locale } = await props.params;
+  const t = await getTranslations({ locale, namespace: 'HomePage' });
+  return <h1>{t('hero_title')}</h1>;
+};
+```
+
+**Client components** — use `useTranslations`:
+```tsx
+'use client';
+import { useTranslations } from 'next-intl';
+
+const Counter = () => {
+  const t = useTranslations('CounterPage');
+  return <button>{t('increment_button')}</button>;
+};
+```
+
+## Translation Key Conventions
+- Namespace suffix: pages end with `Page` → `DashboardPage`, `HomePage`
+- Key names: `snake_case` with context prefix → `card_title`, `meta_description`, `hero_subtitle`
+- Rich text (inline markup): use `t.rich('key', { link: (chunks) => <a>{chunks}</a> })`
+
+## Navigation
+- Always use locale-aware navigation from `@/libs/i18n/I18nNavigation`:
+
+```tsx
+import { Link, useRouter, usePathname } from '@/libs/i18n/I18nNavigation';
+// NOT from 'next/link' or 'next/navigation' directly
+```
+
+## Adding New Strings
+1. Add key to both `src/locales/en.json` and `src/locales/fr.json`
+2. Use the key in the component via `t('key_name')`
+3. Crowdin syncs translations automatically via GitHub Actions
+
+## SEO
+- `sitemap.ts` generates locale `alternates` for all pages
+- `robots.ts` blocks `/dashboard` from indexing
+- Page metadata set via `generateMetadata` using `getTranslations`

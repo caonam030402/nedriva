@@ -1,0 +1,127 @@
+---
+description: Nedriva — FastAPI Python image worker; code in worker/
+globs: worker/**/*.py
+alwaysApply: false
+---
+
+# Nedriva Python worker (`worker/`)
+
+## Architecture Overview
+
+```
+Next.js (client)
+  → POST /api/process          (Next.js API route — uploads image, calls Python)
+  → GET  /api/jobs/[jobId]     (Next.js API route — polls Python for status)
+      ↓
+Python FastAPI (worker/)
+  POST /api/v1/process         → enqueues arq job, returns job_id immediately
+  GET  /api/v1/jobs/{job_id}   → reads job state from Redis
+      ↓
+arq job process (worker.py entrypoint)
+  process_image_job()          → runs pipeline → uploads to R2 → webhooks Next.js
+      ↓
+Redis                          → job state storage + queue
+Cloudflare R2                  → source images (input) + processed images (output)
+```
+
+## Project Structure
+
+```
+worker/
+├── app/
+│   ├── config.py          # Pydantic Settings (env vars)
+│   ├── schemas.py         # Pydantic request/response + enums mirroring TypeScript
+│   ├── storage.py         # R2 / S3 upload helpers
+│   ├── queue.py           # arq job definition + WorkerSettings
+│   ├── main.py            # FastAPI app factory
+│   ├── api/routes.py      # All HTTP routes
+│   └── processing/
+│       ├── __init__.py    # Pipeline dispatcher (run_pipeline)
+│       ├── upscale.py     # Real-ESRGAN wrapper
+│       ├── remove_bg.py   # rembg wrapper
+│       ├── light_ai.py    # OpenCV color/contrast enhancement
+│       └── face_enhance.py # GFPGAN wrapper
+├── worker.py              # arq worker entry (python worker.py)
+├── Dockerfile             # CUDA 12.1 + Python 3.11
+├── docker-compose.yml     # redis + api + worker
+└── .env.example
+```
+
+## Key Rules
+
+### Enums mirror TypeScript exactly
+Enums in `schemas.py` must stay in sync with `src/enums/enhancer.ts`.
+```python
+# ✅ Match TS: EUpscaleModel.Prime = 'prime'
+class UpscaleModel(StrEnum):
+    prime = "prime"
+    gentle = "gentle"
+```
+
+### Model loading is lazy + cached
+Never load models at import time. Use a module-level dict cache; load on first call.
+```python
+# ✅ GOOD
+_cache: dict[str, Any] = {}
+def _load(name: str):
+    if name not in _cache:
+        _cache[name] = load_heavy_model(name)
+    return _cache[name]
+
+# ❌ BAD — loads on import, breaks tests and cold starts
+model = RealESRGANer(...)
+```
+
+### All AI processing is synchronous in the worker
+FastAPI routes are async. Worker tasks are sync (CPU/GPU bound). Never run heavy AI in an async route.
+```python
+# ✅ GOOD — heavy work inside arq job (worker process)
+async def process_image_job(ctx, job_id, payload):
+    image = download_image_from_url(payload["image_url"])  # sync OK in worker
+    result = run_pipeline(image, ...)
+
+# ❌ BAD — blocking the event loop
+@router.post("/process")
+async def process(req):
+    result = run_pipeline(image, ...)  # blocks all requests
+```
+
+### Processing pipeline order
+Always follow this order in `run_pipeline`:
+1. Upscale (Real-ESRGAN)
+2. Face enhance / restore (GFPGAN)
+3. Light AI (color/contrast)
+4. Remove background (rembg) — always last, works on final resolution
+
+### Use PIL Image as the internal type
+All processing functions accept and return `PIL.Image.Image`. Convert to numpy inside each module, not across module boundaries.
+
+### Store secrets only in `.env` / env vars
+Use `get_settings()` everywhere. Never hardcode URLs, keys, or bucket names.
+
+## Adding a New Processing Module
+
+1. Create `app/processing/your_feature.py` with a single public function:
+   ```python
+   def your_feature(image: Image.Image, **kwargs) -> Image.Image:
+       ...
+   ```
+2. Add the step to `_run_single()` in `app/processing/__init__.py`
+3. Add corresponding field to `ProcessRequest` in `schemas.py`
+4. Mirror the new option in `OpsState` (`src/types/enhancer/state.ts`) on the frontend
+
+## Running Locally
+
+```bash
+cd worker
+cp .env.example .env    # fill in R2 keys + webhook URL
+docker compose up       # starts redis + api + worker
+# API docs at http://localhost:8000/docs
+```
+
+Without GPU (CPU mode — slow but works for dev):
+```bash
+pip install -r requirements.txt
+uvicorn app.main:app --reload   # API
+python worker.py                 # Worker (separate terminal)
+```

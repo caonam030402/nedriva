@@ -1,0 +1,110 @@
+---
+description: Relational DB design — normalization, indexes, types, constraints, FKs, naming, scale, migrations
+globs: src/models/**,**/migrations/**,drizzle.config.ts,**/schema*.ts
+alwaysApply: false
+---
+
+# Database design — best practices
+
+When designing or changing schema (Drizzle, SQL, ERD), follow these rules. **Validation must not live only in the backend** — the database should enforce core invariants.
+
+## 1. Normalization (avoid over / under)
+
+- **Over-normalize** → many joins → slower queries.
+- **Under-normalize** → duplicated data → harder maintenance.
+
+**Rule:** Normalize to **3NF** by default. Columns/tables that are **read-heavy and rarely updated** may be **denormalized in a controlled way** (cache column, summary table — document why).
+
+## 2. Indexes
+
+- No index → slow queries as data grows.
+- Too many indexes → slower inserts/updates.
+
+**Rule:** Index columns used in **WHERE**, **JOIN**, **ORDER BY** (and composite indexes in filter order). **Avoid** indexes on rarely used columns or **low cardinality** (booleans, few distinct values) unless you have measured benefit.
+
+## 3. Data types
+
+**Rule:**
+
+| Use case | Suggested Postgres type |
+|----------|-------------------------|
+| Timestamps | `TIMESTAMPTZ` |
+| Money | `NUMERIC(p,s)` (e.g. `NUMERIC(12,2)`) — not `FLOAT` for money |
+| IDs | `UUID` or `BIGINT` — pick one style and stick to it |
+| Bounded strings | `VARCHAR(n)` — avoid `TEXT` everywhere if you need length constraints |
+
+Do not store timestamps as arbitrary strings; do not use `INT` for currency.
+
+## 4. Constraints (use deliberately)
+
+**Rule:** Let the DB enforce **NOT NULL** (where appropriate), **UNIQUE**, **CHECK**, **FOREIGN KEY**. Use nullable columns only when the domain truly allows “no value”.
+
+## 5. Foreign keys & `ON DELETE`
+
+- No FK → orphans / garbage data.
+- Wrong FK → unexpected cascades.
+
+**Rule:** Always declare behavior: **ON DELETE CASCADE** when child rows cannot exist without the parent; **RESTRICT** / **SET NULL** when you need safety or history. Document in schema/migration **why** you chose a policy.
+
+## 6. Naming consistency
+
+**Rule:**
+
+- **Tables:** `snake_case`, plural — `users`, `order_items`.
+- **Columns:** `snake_case` — `id`, `user_id`, `created_at`, `updated_at`.
+- Do not mix `userId`, `user_id`, and `uid` in the same database.
+
+(Drizzle: map TS `camelCase` → DB `snake_case` consistently.)
+
+## 7. Domain boundaries — avoid god tables
+
+**Rule:** One **entity** per table (or a clear group). Model **1–1**, **1–n**, **n–n** (junction table) — do not cram everything into one table.
+
+## 8. Audit & soft delete
+
+**Rule:** Most business tables have `created_at`, `updated_at`. If you need **soft delete**, add `deleted_at` (nullable). Queries must account for `deleted_at IS NULL` when soft delete is in use.
+
+## 9. JSON — use with limits
+
+Postgres JSON is powerful but **must not** replace all relational columns.
+
+**Rule:** JSON for **flexible metadata**, **config**, secondary payloads. **Core** data (filter, join, sort, reporting) → **regular columns** + appropriate indexes (or generated columns if needed).
+
+## 10. Scale & access patterns
+
+**Rule:**
+
+- Avoid **N+1** — batch/join or DataLoader in the app.
+- List APIs: **pagination** — prefer cursor for large feeds; `LIMIT/OFFSET` is acceptable for small offsets.
+- Read-heavy: define **query patterns / use cases** before locking schema (not only a “pretty” ERD).
+- Partition only when volume and access patterns justify it — avoid premature partitioning.
+
+## 11. Schema versioning — migrations
+
+**Rule:** Every schema change goes through **migrations** (e.g. `drizzle-kit generate` / `prisma migrate`). Do **not** hand-edit production DB and let code drift.
+
+## 12. Soft delete vs hard delete
+
+**Rule:** **Legal / billing / important** data → prefer **soft delete** (or an archive table). **Ephemeral logs**, cache — **hard delete** with a retention policy is fine.
+
+## 13. Many-to-many & explicit relationships
+
+**Rule:** N–N → junction table (`user_roles`: `user_id`, `role_id`, composite PK or surrogate `id` + `UNIQUE (user_id, role_id)`). Do not store lists of IDs in a single scalar column unless there is a very strong, documented reason.
+
+## 14. Design from use cases
+
+**Rule:** Before finalizing tables/columns, list **3–5 main queries** (read + write). The schema should support them without constant hacks.
+
+---
+
+## Quick checklist
+
+- [ ] Every table has a **PK**
+- [ ] **Indexes** are appropriate (WHERE/JOIN/ORDER BY), not spammed
+- [ ] **FKs + constraints** (NOT NULL, UNIQUE, CHECK) where needed
+- [ ] **Naming** is consistent `snake_case` in the DB
+- [ ] **created_at** / **updated_at** (and **deleted_at** if soft delete)
+- [ ] **JSON** only for flexible pieces; core fields are columns
+- [ ] **Pagination** considered, N+1 avoided, migrations versioned
+
+See also: `.cursor/rules/api-database-patterns.mdc` and `src/models/Schema.ts`.

@@ -1,0 +1,205 @@
+---
+description: Rules for creating and reusing shared UI components — when to extract, where to put, how to implement
+globs: **/*.tsx
+alwaysApply: false
+---
+
+# Shared Component Rules
+
+## Core Rules
+- **No copy-paste JSX** — if a pattern appears more than once, extract it into a component
+- **No inline components inside page files** — always create a separate file
+- **Check HeroUI first** — see `heroui-usage.mdc`. Only write custom components when HeroUI doesn't have it
+- **Use Tailwind classes** from `@theme` tokens — avoid `style={{ }}` except for gradients and glow shadows
+
+## Directory Structure
+
+```
+src/components/
+  pages/       ← UI tied to a route or feature area (see below)
+  ui/          ← primitives NOT available in HeroUI (GlassCard, GradientText, SectionHeading)
+  layout/      ← app chrome (headers, footers), not marketing page sections
+  image/       ← image-processing specific components (shared across flows)
+```
+
+> **Button, Input, Modal, Tabs, Spinner, Progress, Chip/Badge** → use `@heroui/react/*`, do NOT recreate
+
+---
+
+## Page-scoped components — `src/components/pages/`
+
+Use this tree for **feature- or route-specific** UI that should not pollute shared folders.
+
+```
+src/components/pages/
+  boost/enhance-image/   ← dashboard enhancer (modals, upload zone, queue rows, …)
+  marketing/             ← landing / marketing sections (hero, testimonials, …)
+  pricing-plans/         ← `/pricing` page composition
+```
+
+**Rules**
+- **App Router files stay thin** — `src/app/[locale]/.../page.tsx` imports from `@/components/pages/...` (and shared `ui/`, `layout/`). Avoid large JSX blobs in `page.tsx`.
+- **Name folders by product area**, mirroring routes when it helps (`boost/...` for authenticated app, `marketing/` for public site blocks).
+- **Still shared?** If two unrelated routes need the same component, move it to `ui/`, `layout/`, or `image/` instead of duplicating under `pages/`.
+- **Colocate helpers** — hooks, constants, and small pure modules for that page can live next to the components (e.g. `useEnhancerUploadZone.ts`, `countEnhancerProcessingRows.ts`).
+
+---
+
+## UI Primitives — `src/components/ui/`
+
+### `GlassCard.tsx` — dark glass card/panel
+
+```tsx
+export const GlassCard = (props: {
+  children: React.ReactNode;
+  className?: string;
+  glow?: boolean;           // adds brand glow — use only on featured cards
+  padding?: 'sm' | 'md' | 'lg';
+}) => {
+  const paddings = { sm: 'p-4', md: 'p-6', lg: 'p-8' };
+  return (
+    <div
+      className={`rounded-card border border-brand/20 bg-surface shadow-card ${paddings[props.padding ?? 'md']} ${props.className ?? ''}`}
+      style={props.glow ? { boxShadow: 'var(--shadow-card), var(--shadow-brand)' } : undefined}
+    >
+      {props.children}
+    </div>
+  );
+};
+```
+
+---
+
+> **Badge/Chip** → use `<Chip>` from `@heroui/react/chip`. Do not create a separate `Badge.tsx`.
+
+---
+
+### `GradientText.tsx` — violet→pink gradient text
+
+```tsx
+export const GradientText = (props: { children: React.ReactNode; className?: string }) => (
+  <span
+    className={`bg-clip-text text-transparent ${props.className ?? ''}`}
+    style={{ backgroundImage: 'var(--gradient-text)' }}
+  >
+    {props.children}
+  </span>
+);
+```
+
+---
+
+### `SectionHeading.tsx` — standard section title block
+
+Use for: eyebrow chip + h2 + subtitle
+
+```tsx
+import { Chip } from '@heroui/react/chip';
+
+export const SectionHeading = (props: {
+  eyebrow?: string;
+  title: React.ReactNode;   // accepts <GradientText> inside
+  subtitle?: string;
+  centered?: boolean;
+}) => (
+  <div className={`max-w-2xl ${props.centered ? 'mx-auto text-center' : ''}`}>
+    {props.eyebrow && (
+      <Chip color="secondary" variant="bordered" size="sm" className="mb-4">
+        {props.eyebrow}
+      </Chip>
+    )}
+    <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+      {props.title}
+    </h2>
+    {props.subtitle && (
+      <p className="mt-4 text-lg leading-relaxed text-muted">
+        {props.subtitle}
+      </p>
+    )}
+  </div>
+);
+```
+
+---
+
+## Layout Components — `src/components/layout/`
+
+### `Container.tsx`
+```tsx
+export const Container = (props: { children: React.ReactNode; className?: string }) => (
+  <div className={`mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 ${props.className ?? ''}`}>
+    {props.children}
+  </div>
+);
+```
+
+### `HeroSection.tsx` — page hero with mesh gradient backdrop
+```tsx
+export const HeroSection = (props: { children: React.ReactNode }) => (
+  <section className="relative overflow-hidden bg-base py-24 sm:py-32">
+    <div
+      className="pointer-events-none absolute inset-0"
+      style={{ background: 'var(--gradient-hero)' }}
+    />
+    <Container className="relative z-10">{props.children}</Container>
+  </section>
+);
+```
+
+### `Section.tsx` — standard content section
+```tsx
+export const Section = (props: {
+  children: React.ReactNode;
+  className?: string;
+  dark?: boolean;   // true = bg-surface background
+}) => (
+  <section className={`py-20 sm:py-28 ${props.dark ? 'bg-surface' : 'bg-base'} ${props.className ?? ''}`}>
+    <Container>{props.children}</Container>
+  </section>
+);
+```
+
+---
+
+## Image Components — `src/components/image/`
+
+Create each file when implementing the corresponding feature.
+
+### `OperationSelector.tsx` — grid for choosing image operation
+- Props: `value: ImageOperation | null`, `onChange: (op: ImageOperation) => void`
+- Grid of HeroUI `<Card>` items — each shows: icon, name, short description, `CreditCostBadge`
+- Selected card: `border-brand/45` border + `bg-brand/10` background + `shadow-brand` glow
+- Wrap in `<motion.div>` stagger on mount
+
+### `ImageUploadZone.tsx` — drag & drop upload area
+- Props: `onFile: (file: File) => void`, `disabled?: boolean`
+- Dashed border: `border-2 border-dashed border-brand/45`
+- `accept="image/jpeg,image/png,image/webp"` — validate MIME type on both client and server
+- Show: icon, instruction text, "JPEG, PNG, WebP — max 20MB"
+
+### `BeforeAfterSlider.tsx` — before/after image comparison (`'use client'`)
+- Props: `beforeSrc`, `afterSrc`, `alt`
+- `range input` overlay + CSS `clipPath: inset(0 ${100-pos}% 0 0)` to reveal
+- Divider line: `bg-brand-light` class
+- Animate slider handle with Framer Motion
+
+### `JobStatusBadge.tsx` — HeroUI Chip mapped to job status
+- `pending → default`, `processing → primary`, `completed → success`, `failed → danger`
+- When `processing`: wrap in `<motion.div animate={{ opacity: [1, 0.5, 1] }} transition={{ repeat: Infinity }}>` for pulse
+
+### `CreditCostBadge.tsx` — display credit cost
+- HeroUI `<Chip color="secondary" variant="bordered">`
+- Content: `✦ {n} credit{n > 1 ? 's' : ''}`
+
+### `ProcessingProgress.tsx` — spinner while job is running
+- HeroUI `<Spinner color="primary" size="lg">` inside `<GlassCard>`
+- Primary text: `text-foreground` — "Added to queue…" / "Processing image…"
+- Subtext: `text-subtle` — "Usually takes 10–30 seconds. Page will update automatically."
+
+---
+
+## Checklist when adding new UI
+1. **Does HeroUI have it?** → Check `heroui-usage.mdc`. If yes, use it directly
+2. **Is it in the custom list above?** → If yes, import and reuse, do not recreate
+3. **Not yet defined?** → Create a new file in the correct directory, follow patterns in this rule
+4. After creating → update this rule if the pattern is generic enough to document

@@ -1,0 +1,215 @@
+---
+description: UI design system — Tailwind v4 theme tokens, visual style, and class usage rules
+globs: **/*.tsx,**/*.css
+alwaysApply: false
+---
+
+# UI Design System — Design Tokens
+
+## Visual Identity
+Dark-themed AI SaaS. Tone: modern, powerful, premium.
+- Near-black background with purple tint
+- Violet/purple as primary brand color
+- Glassmorphism cards with subtle border
+- Purple/pink mesh gradient on hero sections
+- Soft glow effects behind key elements
+
+---
+
+## Token Definition — `src/styles/global.css`
+
+Tailwind v4 `@theme` registers tokens as **utility classes** automatically.
+Use `@theme` for solid colors, radius, and shadows.
+Use `:root` for rgba values and gradients (cannot go in `@theme`).
+
+```css
+@import 'tailwindcss';
+@import '@heroui/styles';
+
+@theme {
+  /* ── Backgrounds ─────────────────────────────────────────
+   * bg-base        → page background
+   * bg-surface     → card, panel
+   * bg-elevated    → modal, dropdown, tooltip            */
+  --color-base:     #09080f;
+  --color-surface:  #120f1e;
+  --color-elevated: #1c1830;
+
+  /* ── Brand (violet/purple) ───────────────────────────────
+   * bg-brand / text-brand / border-brand
+   * text-brand-light / border-brand-light
+   * bg-brand-dim                                         */
+  --color-brand:       #8b5cf6;
+  --color-brand-light: #a78bfa;
+  --color-brand-dim:   #6d28d9;
+
+  /* ── Accent (pink/magenta — hero gradient only) ──────────
+   * text-accent / text-accent-light                      */
+  --color-accent:       #c026d3;
+  --color-accent-light: #e879f9;
+
+  /* ── Text ────────────────────────────────────────────────
+   * text-foreground  → headings, labels
+   * text-muted       → body, descriptions
+   * text-subtle      → placeholders, hints
+   * text-inverse     → text on brand backgrounds         */
+  --color-foreground: #ffffff;
+  --color-muted:      #a1a1b5;
+  --color-subtle:     #6b6b80;
+  --color-inverse:    #09080f;
+
+  /* ── Status ──────────────────────────────────────────────
+   * text-success / bg-success  etc.                      */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error:   #ef4444;
+  --color-info:    #3b82f6;
+
+  /* ── Border Radius ───────────────────────────────────────
+   * rounded-card / rounded-pill / rounded-ui-sm etc.     */
+  --radius-ui-sm:  6px;
+  --radius-ui-md:  10px;
+  --radius-card:   16px;
+  --radius-ui-xl:  24px;
+  --radius-pill:   9999px;
+
+  /* ── Shadows ─────────────────────────────────────────────
+   * shadow-card / shadow-cta                             */
+  --shadow-card: 0 4px 24px rgb(0 0 0 / 0.4);
+  --shadow-cta:  0 0 20px rgb(139 92 246 / 0.5);
+}
+
+/* rgba and gradient values — cannot live in @theme */
+:root {
+  --color-brand-glow:    rgba(139, 92, 246, 0.35);
+  --color-bg-overlay:    rgba(18, 15, 30, 0.85);
+
+  --gradient-hero:
+    radial-gradient(ellipse at 30% 50%, rgba(192, 38, 211, 0.4) 0%, transparent 60%),
+    radial-gradient(ellipse at 75% 40%, rgba(109, 40, 217, 0.5) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 80%, rgba(139, 92, 246, 0.2) 0%, transparent 50%);
+  --gradient-cta:   linear-gradient(135deg, #8b5cf6 0%, #c026d3 100%);
+  --gradient-brand: linear-gradient(135deg, #6d28d9 0%, #8b5cf6 50%, #c026d3 100%);
+  --gradient-text:  linear-gradient(90deg, #a78bfa, #e879f9);
+
+  --shadow-brand: 0 0 30px var(--color-brand-glow);
+}
+```
+
+---
+
+## How to Use Tokens as Tailwind Classes
+
+| Token | Tailwind class examples |
+|-------|------------------------|
+| `--color-base` | `bg-base` |
+| `--color-surface` | `bg-surface` |
+| `--color-elevated` | `bg-elevated` |
+| `--color-brand` | `bg-brand` `text-brand` `border-brand` `ring-brand` |
+| `--color-brand-light` | `text-brand-light` `border-brand-light` |
+| `--color-brand-dim` | `bg-brand-dim` |
+| `--color-accent` | `text-accent` `bg-accent` |
+| `--color-foreground` | `text-foreground` |
+| `--color-muted` | `text-muted` |
+| `--color-subtle` | `text-subtle` |
+| `--color-success` | `text-success` `bg-success` |
+| `--color-error` | `text-error` `bg-error` |
+| `--radius-card` | `rounded-card` |
+| `--radius-pill` | `rounded-pill` |
+| `--shadow-card` | `shadow-card` |
+| `--shadow-cta` | `shadow-cta` |
+
+**Opacity modifier** — use Tailwind's `/` syntax for rgba borders:
+```
+border-brand/20   →  rgba(brand, 0.20)  ← default card border
+border-brand/45   →  rgba(brand, 0.45)  ← hover / focus border
+border-white/6    →  rgba(white, 0.06)  ← subtle separator
+bg-brand/15       →  rgba(brand, 0.15)  ← tinted badge background
+```
+
+**Gradients and glows** — these still use `style={{ }}` since Tailwind cannot generate them:
+```tsx
+style={{ background: 'var(--gradient-cta)' }}
+style={{ background: 'var(--gradient-hero)' }}
+style={{ boxShadow: 'var(--shadow-brand)' }}
+```
+
+---
+
+## Component Patterns
+
+### Page background
+```tsx
+<div className="min-h-screen bg-base">
+```
+
+### Hero section (with mesh gradient backdrop)
+```tsx
+<section className="relative overflow-hidden bg-base py-24 sm:py-32">
+  <div className="pointer-events-none absolute inset-0" style={{ background: 'var(--gradient-hero)' }} />
+  <div className="relative z-10">{/* content */}</div>
+</section>
+```
+
+### Glass card
+```tsx
+<div className="rounded-card border border-brand/20 bg-surface p-6 shadow-card">
+```
+
+### Glass card with glow (featured)
+```tsx
+<div
+  className="rounded-card border border-brand/45 bg-surface p-6 shadow-card"
+  style={{ boxShadow: 'var(--shadow-card), var(--shadow-brand)' }}
+>
+```
+
+### CTA button (when NOT using HeroUI Button)
+```tsx
+<button
+  className="rounded-pill px-6 py-2.5 font-semibold text-foreground shadow-cta transition-opacity hover:opacity-90"
+  style={{ background: 'var(--gradient-cta)' }}
+>
+```
+
+### Navbar
+```tsx
+<nav
+  className="sticky top-0 z-50 border-b border-white/6 backdrop-blur-md"
+  style={{ background: 'rgba(9,8,15,0.75)' }}
+>
+```
+
+### Section heading
+```tsx
+<h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+  <span className="text-brand-light">AI</span> Image Enhancement
+</h2>
+<p className="mt-4 text-lg text-muted">...</p>
+```
+
+### Brand pill badge
+```tsx
+<span className="inline-flex items-center gap-1.5 rounded-pill border border-brand/45 bg-brand/15 px-3 py-1 text-sm font-medium text-brand-light">
+  New feature
+</span>
+```
+
+---
+
+## Typography
+- Headings: `font-bold` / `font-extrabold`, `tracking-tight`, `text-foreground`
+- Body text: `text-muted` — never smaller than `text-sm`
+- Hints / meta: `text-subtle`
+
+## Spacing & Layout
+- Content max-width: `max-w-6xl mx-auto px-4 sm:px-6 lg:px-8`
+- Section padding: `py-20 sm:py-28`
+- Card grid: `grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3`
+
+## Rules
+- **Always use Tailwind classes** (`bg-surface`, `text-muted`, `border-brand/20`, `rounded-card`)
+- Only fall back to `style={{ }}` for gradients, glow shadows, and rgba overlays
+- Never hardcode hex values anywhere in JSX
+- No bare `text-white` or `text-black` — use `text-foreground` or `text-inverse`
+- Glow effects (`shadow-brand`, `shadow-cta`) only on CTA buttons and featured cards

@@ -1,0 +1,38 @@
+# Web framework
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+python-multipart==0.0.20
+
+# Config & validation
+pydantic==2.10.4
+pydantic-settings==2.7.0
+python-dotenv==1.0.1
+
+# Job queue
+arq==0.26.1
+redis==5.2.1
+
+# Storage (Cloudflare R2 / AWS S3)
+boto3==1.35.86
+
+# HTTP client (webhooks)
+httpx==0.28.1
+
+# Image processing
+Pillow==11.1.0
+opencv-python-headless==4.10.0.84
+numpy==1.26.4
+
+# AI models — comment out what you don't need to reduce image size
+# Upscale: Real-ESRGAN
+basicsr==1.4.2
+realesrgan==0.3.0
+# Note: torch + torchvision are installed separately via requirements-torch.txt
+# (torch==2.1.2 + torchvision==0.16.2 are the last versions with functional_tensor)
+
+# Background removal
+rembg==2.0.59
+
+# Face enhancement / restoration
+gfpgan==1.3.8
+facexlib==0.3.0

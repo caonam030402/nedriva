@@ -1,0 +1,15 @@
+# Monorepo root
+.env
+.env.*
+!.env.example
+
+app/.env
+app/.env.*
+!app/.env.example
+!app/.env*.example
+
+worker/.env
+worker/.env.*
+!worker/.env.example
+
+.DS_Store

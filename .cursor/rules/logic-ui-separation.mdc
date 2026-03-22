@@ -1,0 +1,58 @@
+---
+description: Separate business logic from UI using custom hooks — applies to all React components
+globs: **/*.tsx
+alwaysApply: false
+---
+
+# Logic / UI Separation
+
+**Rule**: Every Client Component with meaningful state or side-effects MUST extract its logic into a co-located `use<ComponentName>` hook. The component file only contains JSX.
+
+## Structure
+
+```
+src/components/dashboard/enhance-image/
+  EnhancerUploadZone.tsx          ← JSX only, imports hook
+  useEnhancerUploadZone.ts        ← all state, handlers, derived values
+```
+
+## Hook — owns everything stateful
+
+```ts
+// useEnhancerUploadZone.ts
+'use client';
+export function useEnhancerUploadZone() {
+  const [queue, setQueue] = useState<QueueItem[]>([]);
+  const addFiles = (files: File[]) => { ... };
+  const removeItem = (id: string) => { ... };
+  return { queue, addFiles, removeItem, ... };
+}
+```
+
+## Component — JSX only, zero logic
+
+```tsx
+// EnhancerUploadZone.tsx
+'use client';
+export const EnhancerUploadZone = () => {
+  const { queue, addFiles, removeItem } = useEnhancerUploadZone();
+  return <DropZone onFiles={addFiles} ... />;
+};
+```
+
+## When to extract
+
+| Has this? | Extract hook? |
+|---|---|
+| 2+ `useState` calls | ✅ Yes |
+| File/image reading logic | ✅ Yes |
+| Derived values from state | ✅ Yes |
+| API calls / polling | ✅ Yes |
+| Only 1 simple boolean toggle | ❌ No |
+
+## Rules
+
+- Hook file: `use<ComponentName>.ts` (`.ts` not `.tsx` — no JSX in hooks)
+- Hook lives **next to** the component, not in a global `hooks/` folder (unless reused across features)
+- If reused across 2+ features → move to `src/hooks/`
+- Component file imports **only** the hook + UI sub-components — no raw `useState`/`useEffect` at component level

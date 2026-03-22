@@ -1,0 +1,53 @@
+---
+description: Core project overview, tech stack, and architectural constraints
+alwaysApply: true
+---
+
+# AI Image Processing SaaS — Project Overview
+
+## What This App Does
+A SaaS platform for AI-powered image enhancement. Users upload images and select a processing mode:
+- **Upscale** — increase resolution up to 16x (max ~512MP)
+- **Enhance** — improve detail, color, and lighting
+- **Sharpen** — fix soft or out-of-focus images
+- **Denoise** — reduce grain and noise
+- **Restore** — repair old photos, scans, and vintage images
+- **Face Enhancement** — boost facial detail
+- **Remove Background** — automatic background removal
+
+Processing is **async** (jobs run on a background queue). Users pay via credits.
+
+## Tech Stack
+- **Next.js** (App Router, React Server Components, React 19)
+- **TypeScript** (strict mode, no `any`)
+- **Tailwind CSS v4** (CSS-first, no config file — config is in `src/styles/global.css`)
+- **Drizzle ORM** + **PostgreSQL** (PGlite in local dev)
+- **Clerk** — authentication; **public `/pricing`** embeds Clerk Billing `<PricingTable />` (plans configured in Clerk Dashboard, not hard-coded in the app)
+- **next-intl** — i18n (locales: `en`, `fr`)
+- **Arcjet** — security / bot protection (in middleware)
+- **Sentry** + **PostHog** + **LogTape** — observability
+- **Zod** — validation; **React Hook Form** — forms
+- **Vitest** (unit/component) + **Playwright** (integration/E2E)
+
+## Key Architecture
+- All routes live under `src/app/[locale]/`
+- **Page UI** — feature-specific components live under `src/components/pages/<area>/...` (e.g. `boost/enhance-image`, `marketing`, `pricing-plans`); route `page.tsx` files compose them and stay small
+- Route groups: `(auth)` for protected pages, `(marketing)` for public landing + pricing
+- Image upload → job created in DB → background processor picks up → result stored → user notified
+- Middleware = `src/proxy.ts` (NOT `middleware.ts`) — keeps bundle small
+- Env vars MUST go through `src/libs/core/Env.ts` — never read `process.env` directly in app code
+- DB singleton in `src/libs/core/DB.ts` — avoids duplicate pool connections during HMR
+- All user-visible strings must use `next-intl` translations
+
+## Domain Concepts
+- **Job** — a single image processing task with status: `pending | processing | completed | failed`
+- **Credit** — unit of usage; each job costs credits based on operation type and output size
+- **Operation** — one of: `upscale`, `enhance`, `sharpen`, `denoise`, `restore`, `face_enhance`, `remove_bg`
+- **User** — authenticated via Clerk; has a credit balance tracked in DB
+
+## Core Principles
+- Clarity and consistency over cleverness
+- Match existing patterns — minimal surface-area changes
+- Named exports only (no default exports except Next.js pages/layouts)
+- Absolute imports via `@/` unless same directory (use `./foo` then)
+- `type` over `interface` everywhere
