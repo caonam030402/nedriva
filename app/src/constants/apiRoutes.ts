@@ -19,6 +19,8 @@ export const apiRoutes = {
   upload: `${API_BASE_PATH}/upload`,
   credits: `${API_BASE_PATH}/credits`,
   referralsMe: `${API_BASE_PATH}/referrals/me`,
+  /** Authenticated: clears `pending_referral_code` (must run from client → Route Handler). */
+  referralsClearPendingCookie: `${API_BASE_PATH}/referrals/clear-pending-cookie`,
   /** Public: body `{ code }` — +1 click for referrer (sign-up with `?ref=`). */
   referralsTrackClick: `${API_BASE_PATH}/referrals/track-click`,
   /** Bearer `BILLING_PLAN_SYNC_SECRET` — sync Clerk plans → `plans`. */

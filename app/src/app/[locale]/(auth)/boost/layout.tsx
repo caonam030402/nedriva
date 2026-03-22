@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { setRequestLocale } from 'next-intl/server';
 import { BoostHeader } from '@/components/layout/BoostHeader';
+import { ClearPendingReferralCookie } from '@/components/referrals/ClearPendingReferralCookie';
 import { getUserCreditBalance } from '@/libs/persistence/users/getUserCreditBalance';
 import { ensureAppUserFromCurrentClerkUser } from '@/libs/persistence/users/syncClerkAppUser';
 
@@ -20,6 +21,7 @@ export default async function BoostLayout(props: {
 
   return (
     <div className="flex h-[100dvh] max-h-dvh flex-col overflow-hidden bg-page text-foreground">
+      {userId ? <ClearPendingReferralCookie /> : null}
       <BoostHeader initialCredits={headerCredits} />
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">{props.children}</main>
     </div>

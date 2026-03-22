@@ -1,6 +1,9 @@
 import type { BillingSubscriptionWebhookEvent } from '@clerk/backend';
 import type { SubscriptionCapabilities } from '@/constants/billingPlanBenefits';
-import { FREE_SUBSCRIPTION_CAPABILITIES } from '@/constants/billingPlanBenefits';
+import {
+  fallbackMonthlyCreditAllowanceFromRawSlugs,
+  FREE_SUBSCRIPTION_CAPABILITIES,
+} from '@/constants/billingPlanBenefits';
 import { db } from '@/libs/core/DB';
 import { logger } from '@/libs/core/Logger';
 import {
@@ -85,6 +88,18 @@ export async function syncUserEntitlementsFromSubscription(data: SubscriptionDat
         effectivePayerType: merged.effectivePayerType,
         slugs,
       });
+    }
+    if (slugs.length > 0 && caps.monthlyCreditAllowance === 0) {
+      const fb = fallbackMonthlyCreditAllowanceFromRawSlugs(slugs);
+      if (fb > 0) {
+        logger.info('Subscription entitlements: fallback monthly allowance from slug catalog (DB merge was 0)', {
+          subscriptionId: data.id,
+          userId,
+          slugs,
+          fallbackMonthlyCreditAllowance: fb,
+        });
+        caps = { ...caps, monthlyCreditAllowance: fb };
+      }
     }
   }
 

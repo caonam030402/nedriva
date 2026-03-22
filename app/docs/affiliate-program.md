@@ -13,7 +13,7 @@ Public landing: **`/affiliate-program`** (localized prefix when not default loca
 ## Rewards (code)
 
 - Constants: `src/constants/referral.ts` — `REFERRAL_CREDITS_BUSINESS_EMAIL`, `REFERRAL_CREDITS_CONSUMER_EMAIL`, consumer domain list, `PENDING_REFERRAL_COOKIE`, `PENDING_REFERRAL_COOKIE_MAX_AGE_DAYS`.
-- Apply bonus: `src/libs/persistence/users/tryConsumePendingReferralCookie.ts` after `ensureAppUserFromCurrentClerkUser()`.
+- Apply bonus: `src/libs/persistence/users/tryConsumePendingReferralCookie.ts` after `ensureAppUserFromCurrentClerkUser()` (read-only cookie in RSC; client clears via `POST /api/referrals/clear-pending-cookie`).
 
 ## Copyable summary
 

@@ -1,13 +1,39 @@
 import { eq, sql } from 'drizzle-orm';
+import { fallbackMonthlyCreditAllowanceFromRawSlugs } from '@/constants/billingPlanBenefits';
 import { REFERRAL_SUBSCRIPTION_BONUS_PERCENT } from '@/constants/referral';
 import { db } from '@/libs/core/DB';
 import { logger } from '@/libs/core/Logger';
-import { referralSubscriptionBonuses, users } from '@/models/Schema';
+import { referralSubscriptionBonuses, users, userSubscriptionCapabilities } from '@/models/Schema';
 
 /**
  * When the invitee has a paid plan (monthlyCreditAllowance > 0), pay the referrer once:
  * floor(allowance × REFERRAL_SUBSCRIPTION_BONUS_PERCENT / 100), minimum 1 credit.
  */
+/**
+ * If the invitee already has subscription capabilities (e.g. subscribed before the referral cookie was applied),
+ * grant the referrer bonus using the stored monthly allowance.
+ * @param inviteeUserId - Clerk user id of the referred user.
+ */
+export async function tryAwardReferrerFromStoredSubscriptionCapabilities(inviteeUserId: string): Promise<void> {
+  const [capRow] = await db
+    .select({
+      monthlyCreditAllowance: userSubscriptionCapabilities.monthlyCreditAllowance,
+      planSlugSnapshot: userSubscriptionCapabilities.planSlugSnapshot,
+    })
+    .from(userSubscriptionCapabilities)
+    .where(eq(userSubscriptionCapabilities.userId, inviteeUserId))
+    .limit(1);
+  let allowance = capRow?.monthlyCreditAllowance ?? 0;
+  if (allowance === 0 && capRow?.planSlugSnapshot != null && capRow.planSlugSnapshot.trim().length > 0) {
+    const parts = capRow.planSlugSnapshot
+      .split(',')
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+    allowance = Math.max(allowance, fallbackMonthlyCreditAllowanceFromRawSlugs(parts));
+  }
+  await tryAwardReferrerSubscriptionBonus(inviteeUserId, allowance);
+}
+
 export async function tryAwardReferrerSubscriptionBonus(
   inviteeUserId: string,
   monthlyCreditAllowance: number,

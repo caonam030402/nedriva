@@ -1,4 +1,6 @@
 import {
+  CLERK_FREE_ORG_PLAN_SLUG,
+  CLERK_FREE_USER_PLAN_SLUG,
   CLERK_ORGANIZATION_PLAN_KEY,
   CLERK_USER_PLAN_KEY,
 } from '@/constants/clerkPlanKeys';
@@ -42,6 +44,8 @@ export const FREE_SUBSCRIPTION_CAPABILITIES: SubscriptionCapabilities = {
 };
 
 const KNOWN_CANONICAL_SLUGS = new Set<string>([
+  CLERK_FREE_USER_PLAN_SLUG,
+  CLERK_FREE_ORG_PLAN_SLUG,
   ...Object.values(CLERK_USER_PLAN_KEY),
   ...Object.values(CLERK_ORGANIZATION_PLAN_KEY),
 ]);
@@ -53,7 +57,24 @@ const SLUG_ALIASES: Record<string, string> = {
 };
 
 /**
+ * When `plan_benefits.monthly_credit_allowance` is 0 (e.g. Clerk sync inserted defaults only),
+ * use the same numbers as `migrations/0011_billing_plans.sql` so entitlements + referral bonus stay correct.
+ */
+const FALLBACK_MONTHLY_CREDIT_ALLOWANCE_BY_SLUG: Record<string, number> = {
+  [CLERK_FREE_USER_PLAN_SLUG]: 0,
+  [CLERK_FREE_ORG_PLAN_SLUG]: 0,
+  [CLERK_USER_PLAN_KEY.starter]: 100,
+  [CLERK_USER_PLAN_KEY.pro]: 300,
+  [CLERK_USER_PLAN_KEY.max]: 500,
+  [CLERK_ORGANIZATION_PLAN_KEY.credits1000]: 1000,
+  [CLERK_ORGANIZATION_PLAN_KEY.credits2500]: 2500,
+  [CLERK_ORGANIZATION_PLAN_KEY.credits5000]: 5000,
+};
+
+/**
  * Merge multiple line items (numeric = max, boolean = OR).
+ * @param a - First capabilities snapshot.
+ * @param b - Second capabilities snapshot.
  */
 export function mergeCapabilities(a: SubscriptionCapabilities, b: SubscriptionCapabilities): SubscriptionCapabilities {
   return {
@@ -103,6 +124,7 @@ export function resolveBillingPlanSlug(slug: string | null | undefined): string 
 
 /**
  * Slug variants that may appear on webhooks / Clerk API to match `plans.clerk_slug`.
+ * @param rawSlugs - Raw slugs from Clerk line items.
  */
 export function slugCandidatesForBillingLookup(rawSlugs: string[]): string[] {
   const s = new Set<string>();
@@ -125,4 +147,25 @@ export function slugCandidatesForBillingLookup(rawSlugs: string[]): string[] {
     }
   }
   return [...s];
+}
+
+/**
+ * Max monthly credit allowance implied by raw Clerk line-item slugs, from the static catalog (not DB).
+ * Used when DB merge yields 0 but the subscription clearly includes a paid tier slug.
+ * @param rawSlugs - Raw slugs from Clerk line items or `plan_slug_snapshot`.
+ */
+export function fallbackMonthlyCreditAllowanceFromRawSlugs(rawSlugs: string[]): number {
+  let max = 0;
+  for (const raw of rawSlugs) {
+    if (raw == null) {
+      continue;
+    }
+    const resolved = resolveBillingPlanSlug(raw);
+    const k = resolved ?? raw.trim().toLowerCase();
+    if (k.length === 0) {
+      continue;
+    }
+    max = Math.max(max, FALLBACK_MONTHLY_CREDIT_ALLOWANCE_BY_SLUG[k] ?? 0);
+  }
+  return max;
 }

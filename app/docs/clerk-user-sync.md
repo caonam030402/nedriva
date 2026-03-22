@@ -52,7 +52,7 @@ ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "credit_balance" integer DEFAULT 0 
 
 - **Share link:** `/sign-up?ref=<referral_code>` (locale prefix when not default). Invite page: **`/boost/invite`**.
 - **Cookie:** `pending_referral_code` is set on **sign-up** / **sign-in** when `ref` is present (`PendingReferralCookieSetter`).
-- **Apply bonus:** After `ensureAppUserFromCurrentClerkUser()`, `tryConsumePendingReferralCookie()` reads the cookie, links `users.referred_by_user_id`, and adds credits per `src/constants/referral.ts` (business vs consumer email domain). Webhooks do **not** run cookie logic.
+- **Apply bonus:** After `ensureAppUserFromCurrentClerkUser()`, `tryConsumePendingReferralCookie()` reads the cookie (no delete in RSC), links `users.referred_by_user_id`, and adds credits per `src/constants/referral.ts`. The boost layout’s client then calls `POST /api/referrals/clear-pending-cookie` to clear the cookie. Webhooks do **not** run cookie logic.
 - **API:** `GET /api/referrals/me` returns `{ code, link, inviteCount, … }` for the signed-in user.
 
 ## Middleware
