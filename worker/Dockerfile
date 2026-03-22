@@ -9,7 +9,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 # System libs for OpenCV / PIL
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 libglib2.0-0 libsm6 libxrender1 libxext6 \
-    wget curl git \
+    wget curl git ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

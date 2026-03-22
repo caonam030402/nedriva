@@ -25,7 +25,7 @@ from arq import create_pool
 from arq.connections import ArqRedis, RedisSettings
 
 from app.config import get_settings
-from app.schemas import JobStatus
+from app.schemas import JobStatus, VideoJobStatus
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +49,20 @@ async def set_job_status(redis: ArqRedis, job_id: str, data: dict) -> None:
 
 async def get_job_data(redis: ArqRedis, job_id: str) -> dict | None:
     raw = await redis.hgetall(f"job:{job_id}")
+    if not raw:
+        return None
+    return {k.decode(): json.loads(v) for k, v in raw.items()}
+
+
+# ── Video job state (separate Redis key from image jobs) ───────
+
+async def set_video_job_status(redis: ArqRedis, job_id: str, data: dict) -> None:
+    await redis.hset(f"vjob:{job_id}", mapping={k: json.dumps(v) for k, v in data.items()})
+    await redis.expire(f"vjob:{job_id}", 86400)
+
+
+async def get_video_job_data(redis: ArqRedis, job_id: str) -> dict | None:
+    raw = await redis.hgetall(f"vjob:{job_id}")
     if not raw:
         return None
     return {k.decode(): json.loads(v) for k, v in raw.items()}
@@ -169,6 +183,78 @@ async def process_image_job(ctx: dict, job_id: str, payload: dict) -> dict:
         return error_data
 
 
+# ── Video worker task ───────────────────────────────────────────
+
+def _run_video_pipeline_sync(job_id: str, payload: dict) -> dict:
+    from app.processing.video_pipeline import run_video_enhance_sync
+
+    return run_video_enhance_sync(
+        job_id,
+        payload["input_url"],
+        payload["output_key"],
+        payload["options"],
+    )
+
+
+async def process_video_job(ctx: dict, job_id: str, payload: dict) -> dict:
+    """arq handler — downloads video, runs ffmpeg enhancement, uploads to R2/S3."""
+    redis: ArqRedis = ctx["redis"]
+    settings = get_settings()
+    timeout_s = settings.video_job_pipeline_timeout_s
+
+    await set_video_job_status(
+        redis,
+        job_id,
+        {
+            "job_id": job_id,
+            "status": VideoJobStatus.processing.value,
+            "progress": 15,
+            "stage_label": "Enhancing",
+            "output_url": None,
+            "error": None,
+        },
+    )
+
+    try:
+        job_data = await asyncio.wait_for(
+            asyncio.to_thread(_run_video_pipeline_sync, job_id, payload),
+            timeout=timeout_s,
+        )
+        await set_video_job_status(redis, job_id, job_data)
+        logger.info("Video job %s finished — %s", job_id, job_data.get("output_url"))
+        return job_data
+
+    except asyncio.TimeoutError:
+        msg = (
+            f"Video job exceeded pipeline timeout ({timeout_s}s). "
+            "Try a shorter clip, lower resolution, or raise VIDEO_JOB_PIPELINE_TIMEOUT_S."
+        )
+        logger.error("Video job %s timed out after %ds", job_id, timeout_s)
+        error_data = {
+            "job_id": job_id,
+            "status": VideoJobStatus.failed.value,
+            "progress": 0,
+            "stage_label": None,
+            "output_url": None,
+            "error": msg,
+        }
+        await set_video_job_status(redis, job_id, error_data)
+        return error_data
+
+    except Exception as exc:
+        logger.exception("Video job %s failed: %s", job_id, exc)
+        error_data = {
+            "job_id": job_id,
+            "status": VideoJobStatus.failed.value,
+            "progress": 0,
+            "stage_label": None,
+            "output_url": None,
+            "error": str(exc),
+        }
+        await set_video_job_status(redis, job_id, error_data)
+        return error_data
+
+
 async def _send_webhook(data: dict) -> None:
     settings = get_settings()
     url = (settings.webhook_url or "").strip()
@@ -235,12 +321,15 @@ async def startup(ctx: dict) -> None:
 
 class WorkerSettings:
     """arq worker configuration — referenced by `python worker.py`."""
-    functions = [process_image_job]
+    functions = [process_image_job, process_video_job]
     on_startup = startup
     redis_settings = _redis_settings()
     # On CPU: keep at 1 so jobs run serially — 4 jobs competing for the same cores
     # is slower than 1 job using all cores. Set to 4+ on GPU server.
     max_jobs = 1
-    # Must be >= job_pipeline_timeout_s (default 1800s) or arq kills the job first
-    job_timeout = get_settings().job_pipeline_timeout_s
+    # Must cover longest pipeline (video ffmpeg can exceed image AI on long clips)
+    job_timeout = max(
+        get_settings().job_pipeline_timeout_s,
+        get_settings().video_job_pipeline_timeout_s,
+    )
     keep_result = 3600            # keep result in Redis for 1h

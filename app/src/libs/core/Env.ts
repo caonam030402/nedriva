@@ -21,6 +21,13 @@ export const Env = createEnv({
       .string()
       .optional()
       .transform(v => v === '1' || v === 'true'),
+    /**
+     * Base URL of the Python processing service (FastAPI).
+     * Example: http://localhost:8000  or  https://video-service.internal.example.com
+     */
+    PYTHON_SERVICE_URL: z.string().url().optional(),
+    /** API key for the Python processing service. */
+    PYTHON_SERVICE_API_KEY: z.string().optional(),
     DATABASE_URL: z.string().min(1),
   },
   client: {
@@ -52,6 +59,8 @@ export const Env = createEnv({
     BILLING_PLAN_SYNC_SECRET: process.env.BILLING_PLAN_SYNC_SECRET,
     BILLING_DISABLE_CLERK_PLAN_SYNC_ON_SUBSCRIPTION_WEBHOOK:
       process.env.BILLING_DISABLE_CLERK_PLAN_SYNC_ON_SUBSCRIPTION_WEBHOOK,
+    PYTHON_SERVICE_URL: process.env.PYTHON_SERVICE_URL,
+    PYTHON_SERVICE_API_KEY: process.env.PYTHON_SERVICE_API_KEY,
     DATABASE_URL: process.env.DATABASE_URL,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_CLERK_ORG_BILLING_ENABLED:

@@ -176,6 +176,13 @@
       "when": 1776200000000,
       "tag": "0024_referral_bonus_drop_percent_basis",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1776300000000,
+      "tag": "0025_video_enhancement",
+      "breakpoints": true
     }
   ]
 }

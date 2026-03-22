@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
+from app.api.video_routes import video_router
 from app.config import get_settings
 
 logging.basicConfig(
@@ -32,7 +33,7 @@ def create_app() -> FastAPI:
 
     app = FastAPI(
         title="Nedriva Processing Service",
-        description="AI image upscaling, enhancement, and background removal",
+        description="AI image processing and ffmpeg-based video enhancement",
         version="1.0.0",
         docs_url="/docs" if settings.app_env != "production" else None,
         redoc_url=None,
@@ -48,6 +49,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(router, prefix="/api/v1")
+    app.include_router(video_router, prefix="/api/v1/video")
 
     return app
 

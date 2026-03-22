@@ -59,6 +59,12 @@ class Settings(BaseSettings):
     webhook_url: str = ""
     webhook_secret: str = ""
 
+    # Video (ffmpeg pipeline in worker)
+    # Must be >= longest expected encode; arq job_timeout uses max(image, video) below.
+    video_job_pipeline_timeout_s: int = 7200
+    max_video_duration_secs: int = 600  # 10 minutes
+    max_video_size_mb: int = 500
+
 
 @lru_cache
 def get_settings() -> Settings:

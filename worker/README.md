@@ -1,6 +1,6 @@
 # Nedriva — Python worker (processing service)
 
-FastAPI service that runs AI image processing models. Communicates with the Next.js app via REST API + webhook.
+FastAPI service that runs AI **image** processing and **ffmpeg-based video** enhancement. Communicates with the Next.js app via REST API (+ webhook for images).
 
 ## Stack
 
@@ -13,6 +13,7 @@ FastAPI service that runs AI image processing models. Communicates with the Next
 | Background removal | rembg (U2Net / ISNET) |
 | Face enhancement | GFPGAN v1.4 |
 | Light AI | OpenCV CLAHE + white balance |
+| Video enhance | ffmpeg (denoise, Lanczos upscale, colour, sharpen) → `libx264` |
 | Storage | Cloudflare R2 (S3-compatible) |
 | Container | Docker + CUDA 12.1 |
 
@@ -30,7 +31,20 @@ Next.js
                                          │ uploads to R2
                                          ▼
                                     Webhook → Next.js /api/webhooks/process
+
+Next.js (Boost → Video)
+  POST /api/videos/enhance ─────► FastAPI POST /api/v1/video/process
+  GET  /api/videos/:id/status ───► FastAPI GET  /api/v1/video/jobs/{job_id}
+                                         │ Redis key vjob:{id}
+                                    arq Worker `process_video_job`
+                                         │ downloads input URL
+                                         │ ffmpeg filter graph
+                                         │ uploads MP4 to R2 at output_key
 ```
+
+Video jobs require **both** the API container and the **worker** (`python worker.py` / `worker` service in Compose). The API only enqueues; ffmpeg runs inside the worker.
+
+**Local (no Docker):** install **ffmpeg** on your PATH (`brew install ffmpeg` on macOS).
 
 ## Quick Start
 
