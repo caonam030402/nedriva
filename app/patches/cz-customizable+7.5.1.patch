@@ -1,0 +1,62 @@
+diff --git a/node_modules/cz-customizable/lib/build-commit.js b/node_modules/cz-customizable/lib/build-commit.js
+index 28de1b3..09bb9d6 100644
+--- a/node_modules/cz-customizable/lib/build-commit.js
++++ b/node_modules/cz-customizable/lib/build-commit.js
+@@ -37,6 +37,15 @@ const addScope = (scope, config) => {
+ 
+ const addSubject = subject => _.trim(subject);
+ 
++/** Gitmoji-style: emoji before type, e.g. `🔧 chore: subject` (commitlint uses optional prefix in parser). */
++const addTypeEmojiPrefix = (type, config) => {
++  const map = _.get(config, 'typeEmojis', null);
++  if (!map || !type || !map[type]) {
++    return '';
++  }
++  return `${map[type]} `;
++};
++
+ const addType = (type, config) => {
+   const prefix = _.get(config, 'typePrefix', '');
+   const suffix = _.get(config, 'typeSuffix', '');
+@@ -86,6 +95,7 @@ module.exports = (answers, config) => {
+     head += addTicketNumber(answers.ticketNumber, config);
+   }
+ 
++  head += addTypeEmojiPrefix(answers.type, config);
+   head += addType(answers.type, config);
+   head += addScope(answers.scope, config);
+ 
+@@ -93,7 +103,12 @@ module.exports = (answers, config) => {
+     head += addTicketNumber(answers.ticketNumber, config);
+   }
+ 
+-  head += addSubject(answers.subject.slice(0, config.subjectLimit));
++  const rawSubject = answers.subject ? answers.subject : '';
++  const limit = config.subjectLimit;
++  const clipped =
++    typeof limit === 'number' && limit > 0 ? rawSubject.slice(0, limit) : rawSubject;
++
++  head += addSubject(clipped);
+ 
+   // Wrap these lines at 100 characters
+   let body;
+diff --git a/node_modules/cz-customizable/lib/questions.js b/node_modules/cz-customizable/lib/questions.js
+index 36248f5..2526a48 100644
+--- a/node_modules/cz-customizable/lib/questions.js
++++ b/node_modules/cz-customizable/lib/questions.js
+@@ -143,13 +143,11 @@ module.exports = {
+         message: messages.subject,
+         default: config.usePreparedCommit && getPreparedCommit('subject'),
+         validate(value) {
+-          const limit = config.subjectLimit || 100;
+-          if (value.length > limit) {
+-            return `Exceed limit: ${limit}`;
+-          }
++          // Always return true to bypass the length check; linting is handled by commitlint
+           return true;
+         },
+         filter(value) {
++          if (!value) return value;
+           const upperCaseSubject = config.upperCaseSubject || false;
+ 
+           return (upperCaseSubject ? value.charAt(0).toUpperCase() : value.charAt(0).toLowerCase()) + value.slice(1);
