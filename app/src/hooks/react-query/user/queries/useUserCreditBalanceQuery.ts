@@ -12,7 +12,7 @@ export const userCreditBalanceQueryOptions = {
     const { balance } = await fetchUserCreditBalance();
     return balance;
   },
-  staleTime: 30_000,
+  staleTime: 5_000,
 } as const;
 
 type Options = {
@@ -31,6 +31,9 @@ export function useUserCreditBalanceQuery(options?: Options) {
   return useQuery({
     ...userCreditBalanceQueryOptions,
     enabled: Boolean(userId),
-    initialData: options?.initialBalance,
+    // Only pass initialData when we actually have a value from SSR to seed the cache
+    ...(options?.initialBalance !== undefined
+      ? { initialData: options.initialBalance }
+      : {}),
   });
 }
