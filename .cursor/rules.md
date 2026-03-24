@@ -20,3 +20,9 @@
 @rules/image-processing-features.mdc
 @rules/testing-conventions.mdc
 @rules/worker.mdc
+
+When making changes:
+
+- Use GitNexus tools to analyze dependencies and impact
+- Prioritize safe refactoring over aggressive changes
+- Always consider cross-file effects, not just the current file
