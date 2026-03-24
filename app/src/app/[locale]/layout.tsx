@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
-import { Cormorant_Garamond } from 'next/font/google';
+import { Cormorant_Garamond, Manrope } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { PostHogProvider } from '@/components/providers/PostHogProvider';
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
@@ -15,6 +15,12 @@ const marketingDisplay = Cormorant_Garamond({
   subsets: ['latin'],
   variable: '--font-marketing-display',
   weight: ['500', '600', '700'],
+});
+
+const sans = Manrope({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  weight: ['300', '400', '500', '600', '700', '800'],
 });
 
 export const metadata: Metadata = {
@@ -70,7 +76,7 @@ export default async function RootLayout(props: {
     <html
       lang={locale}
       data-theme="dark"
-      className={marketingDisplay.variable}
+      className={`${marketingDisplay.variable} ${sans.variable}`}
       suppressHydrationWarning
     >
       <body>

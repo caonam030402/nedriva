@@ -44,6 +44,7 @@
 
   /* ── Display typography (set via next/font on <html>) ──── */
   --font-display: var(--font-marketing-display), ui-serif, Georgia, 'Times New Roman', serif;
+  --font-sans: var(--font-sans), ui-sans, system-ui, -apple-system, sans-serif;
 }
 
 /* rgba + gradient values — cannot live in @theme */
