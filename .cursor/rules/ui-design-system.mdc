@@ -7,7 +7,8 @@ alwaysApply: false
 # UI Design System — Design Tokens
 
 ## Visual Identity
-**Cinematic dark marketing** (Artlist-style reference): pure black canvas, **electric gold** as primary brand/CTA, warm radial glows (amber / soft red) in heroes, large rounded cards, glass panels (`glass` utility), optional **display serif** (`font-display`, Cormorant Garamond via `next/font` on `<html>`).
+
+**Cinematic dark marketing** (Artlist-style reference): pure black canvas, **electric gold** (`#e8c547`) as primary brand/CTA, warm radial glows (amber / soft red) in heroes, large rounded cards, glass panels, optional **display serif** (`font-display`, Cormorant Garamond via `next/font` on `<html>`).
 
 - Body copy and UI: geometric sans (system / default sans stack).
 - Major headings (landing sections): `font-display` + `font-semibold` … `font-bold` as needed.
@@ -35,7 +36,7 @@ Use `:root` for rgba values and gradients (cannot go in `@theme`).
 | Gradient text | `--gradient-text` | `GradientText` or `bg-clip-text` + variable |
 | Navbar scrim | `--color-bg-overlay` | `style={{ background: 'var(--color-bg-overlay)' }}` |
 
-**Opacity / borders** — use Tailwind `/` syntax: `border-white/8`, `border-brand/25`, `bg-white/[0.06]`.
+**Opacity / borders** — use Tailwind `/` syntax: `border-white/8`, `border-brand/25`, `bg-white/3`.
 
 **Marketing glow on headings** — utility class `text-glow-heading` (soft gold/white bloom).
 
@@ -49,17 +50,22 @@ Use `:root` for rgba values and gradients (cannot go in `@theme`).
 |-----------|------|---------|
 | `CommonButton` | `@/components/common/CommonButton` | Pill marketing CTAs: `primary` (gold), `secondary` (white), `outline`, `ghost`. Wrap with `<Link>` for navigation. |
 | `BrandLogo` | `@/components/common/BrandLogo` | Header/footer wordmark + gold mark. |
-| `SectionHeader` | `@/components/common/SectionHeader` | Badge + `font-display` title + optional gradient span + subtitle + optional `action` slot (e.g. “View all”). |
+| `SectionHeader` | `@/components/common/SectionHeader` | Badge + `font-display` title + optional gradient span + subtitle + optional `action` slot. |
 | `TagPill` | `@/components/common/TagPill` | Small uppercase genre/category chips on dark. |
-| `MediaCard` | `@/components/common/MediaCard` | Rounded aspect-ratio frame + optional label/overlay (catalog-style grids). |
+| `MediaCard` | `@/components/common/MediaCard` | Rounded aspect-ratio frame + optional label/overlay. |
 | `Badge` | `@/components/common/Badge` | Eyebrow / status pills. |
 | `Card` | `@/components/common/Card` | Generic content cards. |
 
-**HeroUI `Button`** — still use inside app/dashboard forms and dense UI; **marketing landing CTAs** should prefer `CommonButton` for consistent gold pills.
+**HeroUI `Button`** — use inside app/dashboard forms and dense UI; **marketing landing CTAs** should prefer `CommonButton` for consistent gold pills.
 
 ---
 
 ## Patterns
+
+### Glass sticky header
+```tsx
+<header className="sticky top-0 z-50 border-b border-white/8 bg-black/40 backdrop-blur-xl supports-backdrop-filter:bg-black/30">
+```
 
 ### Page shell
 ```tsx
@@ -86,30 +92,40 @@ Use `:root` for rgba values and gradients (cannot go in `@theme`).
 </Link>
 ```
 
-### Navbar scrim
-```tsx
-<div className="absolute inset-0 -z-10 backdrop-blur-md" style={{ background: 'var(--color-bg-overlay)' }} />
-```
-
 ### Glass floating panel
 ```tsx
 <div className="glass rounded-card p-4 shadow-card">…</div>
 ```
 
+### Equal-height card grid (e.g. "How it works" steps)
+```tsx
+<div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:items-stretch lg:gap-6">
+  <article className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col rounded-card border border-white/10 bg-elevated/85 p-6 shadow-card">
+      {/* content */}
+    </div>
+  </article>
+</div>
+```
+
 ---
 
 ## Typography
+
 - Marketing headings: `font-display`, `tracking-tight`, `text-foreground`; avoid `font-extrabold` on serif — prefer `font-semibold` unless a block is sans-only.
 - Body: `text-muted` for descriptions; meta / hints: `text-subtle`.
 - Tight modern sans labels: `tracking-tight` or `tracking-widest` + `uppercase` for nav labels.
 
 ## Spacing & layout
+
 - Content width: `max-w-6xl mx-auto px-4 sm:px-6 lg:px-8` (or shared `Container`).
 - Section vertical rhythm: `py-20 sm:py-28` (or `py-24 sm:py-32` for hero).
 - Cards: `rounded-card`, `border-white/8` or `border-brand/20` for emphasis.
 
 ## Rules
+
 - **Prefer theme tokens** (`bg-page`, `text-brand-light`, `border-white/6`) — no arbitrary hex in JSX.
 - Use `style={{ }}` only for `var(--gradient-*)`, `var(--color-bg-overlay)`, and similar variables.
 - Do not use bare `text-white` / `text-black` for theme text — use `text-foreground` / `text-inverse`.
 - Gold glow (`shadow-cta`, `shadow-brand`) on primary CTAs and featured cards only; keep the rest restrained.
+- Icons: always import from `lucide-react`. Do not inline SVG.

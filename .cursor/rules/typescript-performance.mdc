@@ -1,0 +1,324 @@
+---
+description: TypeScript type safety rules and React performance anti-patterns
+globs: "**/*.{ts,tsx}"
+alwaysApply: true
+---
+
+# TypeScript & Performance Rules
+
+## TypeScript
+
+### No `any`
+
+Never use `any`. Use `unknown` + narrowing, or explicit type annotation.
+
+```typescript
+// ❌
+function process(data: any) {}
+
+// ✅
+function process(data: unknown) {
+  if (typeof data === 'string') { /* safe */ }
+}
+// or
+function process(data: SpecificType) {}
+```
+
+### `type` over `interface`
+
+Use `type` for object shapes. Reserve `interface` for things that may be extended.
+
+```typescript
+// ✅
+type UserProfile = {
+  id: string;
+  name: string;
+};
+
+// ✅ if extension is intended
+interface Config {
+  baseUrl: string;
+}
+```
+
+### Discriminated unions over optional fields
+
+```typescript
+// ❌ — fragile, need multiple undefined checks
+type Result = {
+  data?: UserProfile;
+  error?: string;
+  loading?: boolean;
+};
+
+// ✅ — exhaustive, TypeScript narrows automatically
+type Result =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; data: UserProfile }
+  | { status: 'error'; error: string };
+```
+
+### Prefer inference, annotate when ambiguous
+
+```typescript
+// ✅ TypeScript infers: () => Promise<EnhancerHistoryItem[]>
+async function getHistory() { return []; }
+
+// ✅ When inference fails or is wrong — annotate
+const result: string = await someAsyncFn(); // explicit needed
+```
+
+### Zod types
+
+```typescript
+// ✅ Define Zod schema, infer TypeScript type from it
+import { z } from 'zod';
+import type * as z from 'zod';
+
+const HistorySchema = z.object({
+  id: z.string().uuid(),
+  createdAt: z.coerce.date(),
+  operation: z.enum(['upscale', 'enhance', 'restore']),
+});
+
+export type HistoryRow = z.infer<typeof HistorySchema>;
+// ✅ HistoryRow is: { id: string; createdAt: Date; operation: 'upscale' | 'enhance' | 'restore' }
+```
+
+### Options object for 3+ params
+
+```typescript
+// ❌
+function submitJob(userId: string, operation: string, creditCost: number, inputKey: string, outputBucket: string) {}
+
+// ✅
+function submitJob(opts: {
+  userId: string;
+  operation: string;
+  creditCost: number;
+  inputKey: string;
+  outputBucket: string;
+}) {}
+```
+
+### Named exports only
+
+```typescript
+// ❌
+export default function HomePage() {}
+export default class ApiClient {}
+
+// ✅ — allows tree-shaking and easier refactoring
+export function HomePage() {}
+export class ApiClient {}
+```
+
+Exception: Next.js `page.tsx` and `layout.tsx` can use default exports per convention.
+
+### Exhaustive switch
+
+```typescript
+// ❌ — TypeScript won't error if a new status is added
+switch (job.status) {
+  case 'queued': return <QueuedIcon />;
+  case 'processing': return <Spinner />;
+  case 'done': return <DoneIcon />;
+}
+
+// ✅ — TypeScript errors if a case is missing
+const iconMap = {
+  queued: <QueuedIcon />,
+  processing: <Spinner />,
+  done: <DoneIcon />,
+  error: <ErrorIcon />,
+} as const satisfies Record<TJobStatus, ReactNode>;
+```
+
+---
+
+## React Performance
+
+### No `useMemo` / `useCallback`
+
+React Compiler (Babel plugin) handles memoization in production. Do not add manually.
+
+```typescript
+// ❌ — redundant, adds overhead
+const memoized = useMemo(() => expensiveComputation(a, b), [a, b]);
+const handler = useCallback(() => onChange(value), [value]);
+
+// ✅ — let the compiler handle it
+const memoized = expensiveComputation(a, b);
+const handler = () => onChange(value);
+```
+
+### Avoid `useEffect` for data fetching
+
+```typescript
+// ❌ — dual firing, no cleanup, no SSR support
+useEffect(() => {
+  fetch('/api/jobs').then(res => res.json()).then(setJobs);
+}, []);
+```
+
+Use React Query hooks instead:
+```typescript
+// ✅ — SSR prefetch, caching, deduping, background refetch
+const { data: jobs } = useJobsQuery();
+```
+
+### Avoid `useEffect` for derived state
+
+```typescript
+// ❌
+const [fullName, setFullName] = useState('');
+useEffect(() => {
+  setFullName(`${firstName} ${lastName}`);
+}, [firstName, lastName]);
+
+// ✅ — derive at render time
+const fullName = `${firstName} ${lastName}`;
+```
+
+### Avoid side effects in render
+
+```typescript
+// ❌ — side effect in render body
+function Component() {
+  const router = useRouter();
+  if (!auth) router.push('/login'); // redirect in render = anti-pattern
+  return <div />;
+}
+
+// ✅ — guard at top, no side effect
+function Component() {
+  const router = useRouter();
+  if (!auth) {
+    router.push('/login');
+    return null;
+  }
+  return <div />;
+}
+```
+
+### Stable object/array references in JSX
+
+```typescript
+// ❌ — new object on every render, causes child re-render
+return <Table columns={[{ key: 'id', label: 'ID' }]} />;
+
+// ✅ — define outside component or memoize
+const COLUMNS = [{ key: 'id', label: 'ID' }] as const;
+return <Table columns={COLUMNS} />;
+```
+
+### Heavy list rendering
+
+```typescript
+// ✅ Always provide stable `key`
+return items.map(item => <ListItem key={item.id} {...item} />);
+
+// ❌ key={index} breaks animations and state in lists
+return items.map((item, i) => <ListItem key={i} {...item} />);
+```
+
+### Image optimization
+
+```typescript
+// ✅ Use next/image for all user-visible images
+import Image from 'next/image';
+<Image src={url} alt={alt} width={w} height={h} sizes="(max-width: 768px) 100vw, 50vw" />
+
+// ✅ For decorative or external images that can't use next/image, add eslint-disable comment
+{/* eslint-disable-next-line @next/next/no-img-element */}
+<img src={externalUrl} alt="" />
+```
+
+---
+
+## ESLint Discipline
+
+### Import order
+
+Follow the project's ESLint config (Antfu). The enforced order:
+
+1. Node.js built-ins (`node:fs`, `node:path`)
+2. External packages (`lucide-react`, `next-intl`, `@heroui/...`)
+3. Internal packages (`@/...`)
+4. Parent imports (`../`)
+5. Sibling imports (`./`)
+6. Type imports (`import type`)
+
+```typescript
+// ✅ Correct order
+import type { ReactNode } from 'react';
+import { ArrowRight, Check, Download } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
+import { Fragment } from 'react';
+import { SectionHeader } from '@/components/common/SectionHeader';
+import { Button } from '@/components/ui/Button';
+import { Link } from '@/libs/i18n/I18nNavigation';
+import type { UserProfile } from '@/types/users';
+```
+
+### No unused variables
+
+```typescript
+// ❌
+const { data, error, isLoading } = useQuery(); // isLoading not used
+return <div>{data}</div>;
+
+// ✅ — pick only what you need
+const { data } = useQuery();
+return <div>{data}</div>;
+```
+
+### Tailwind class order
+
+ESLint enforces a specific class ordering (via `eslint-plugin-tailwindcss`). The order roughly follows: positioning → box model → typography → colors → effects → filters.
+
+Use `npx eslint --fix` to auto-fix class ordering.
+
+### No barrel imports from HeroUI
+
+```typescript
+// ❌ — pulls entire package, bloats bundle
+import { Button, Input, Select } from '@heroui/react';
+
+// ✅ — individual imports
+import { Button } from '@heroui/react/button';
+import { Input } from '@heroui/react/input';
+```
+
+---
+
+## Bundle Safety
+
+### No `process.env` in app code
+
+```typescript
+// ❌
+const apiKey = process.env.API_KEY;
+
+// ✅ — goes through Env.ts validation
+import { env } from '@/libs/core/Env';
+const apiKey = env.API_KEY; // typed, validated at startup
+```
+
+### No large dependencies in client components
+
+Before adding a new npm package:
+- Check the bundle size impact (`npm run check:deps` runs Knip)
+- Prefer small, tree-shakeable alternatives
+- Never import the full lodash (`lodash`) — use `lodash-es` or specific functions
+
+### Dynamic imports for heavy components
+
+```typescript
+// ✅ — load heavy modal only when opened
+const HeavyModal = dynamic(() => import('./HeavyModal'), { loading: () => <Skeleton /> });
+
+// ✅ — conditional SSR for client-only components
+const ClientOnlyChart = dynamic(() => import('./Chart'), { ssr: false });
+```

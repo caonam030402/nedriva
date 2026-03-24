@@ -7,11 +7,13 @@ alwaysApply: false
 # React & Next.js Patterns
 
 ## Server vs Client Components
+
 - **Default to Server Components** (no directive needed) — use for data fetching, DB queries
 - Add `'use client'` only when using browser APIs, event handlers, or React hooks
-- Examples: `Hello.tsx`, `CurrentCount.tsx` → server; `CounterForm.tsx`, `LocaleSwitcher.tsx` → client
+- Examples: `Hello.tsx` → server; `CounterForm.tsx`, `LocaleSwitcher.tsx` → client
 
 ## Props
+
 - Single `props` param with inline type — **no destructuring**:
 
 ```tsx
@@ -27,11 +29,13 @@ const Card = (props: { title: string; children: React.ReactNode }) => {
 - Use `React.ReactNode` not bare `ReactNode`
 
 ## Hooks & Optimization
+
 - **No `useMemo` / `useCallback`** — React Compiler handles memoization in production
 - **Avoid `useEffect`** whenever possible — prefer server-side logic or derived state
 - Inline short event handlers; extract to named functions only when complex
 
 ## Forms & Image Upload
+
 - Use **React Hook Form** + **Zod** for all forms
 - Validate with `.safeParse()`, handle errors with `z.treeifyError()`
 - After mutation, call `router.refresh()` to re-sync server data (no global state needed)
@@ -40,23 +44,30 @@ const Card = (props: { title: string; children: React.ReactNode }) => {
 - Disable submit button while job is `pending` or `processing`
 
 ## Styling
+
 - Use **Tailwind CSS v4 utility classes** — no inline styles
 - No `tailwind.config.ts` — custom theme lives in `src/styles/global.css`
 - `@layer` order: `theme, base, clerk, components, utilities`
+- **Design tokens** (`bg-brand`, `text-brand-light`) — no raw hex
+- `style={{ }}` only for `var(--gradient-*)` and `var(--color-bg-overlay)`
+- **Icons**: import from `lucide-react` — never inline SVG
 
 ## Routing
+
 - All pages under `src/app/[locale]/`
 - Use locale-aware navigation from `@/libs/i18n/I18nNavigation` (`Link`, `useRouter`, `usePathname`)
 - Page files: `page.tsx`, `layout.tsx`, `route.ts` (Next.js conventions)
 - `generateStaticParams` on root layout pre-generates all locale routes
 
 ## Image Display
+
 - Use `next/image` for all images — always set `width`, `height` or `fill` + `sizes`
 - Before/after comparison: render two `<img>` tags with a CSS clip-path slider (client component)
 - Remove background results: wrap in `<div className="bg-[url('/checkerboard.png')]">` to show transparency
 - Never render base64 image data in JSX — always use storage URLs
 
 ## Commits (Conventional Commits required)
+
 ```
 feat: add upscale operation to job creation form
 fix: handle failed job status in polling hook

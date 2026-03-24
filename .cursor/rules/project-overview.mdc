@@ -3,51 +3,115 @@ description: Core project overview, tech stack, and architectural constraints
 alwaysApply: true
 ---
 
-# AI Image Processing SaaS — Project Overview
+# Nedriva — Project Overview
 
 ## What This App Does
-A SaaS platform for AI-powered image enhancement. Users upload images and select a processing mode:
-- **Upscale** — increase resolution up to 16x (max ~512MP)
-- **Enhance** — improve detail, color, and lighting
-- **Sharpen** — fix soft or out-of-focus images
-- **Denoise** — reduce grain and noise
-- **Restore** — repair old photos, scans, and vintage images
-- **Face Enhancement** — boost facial detail
-- **Remove Background** — automatic background removal
 
-Processing is **async** (jobs run on a background queue). Users pay via credits.
+SaaS platform for AI-powered image and video enhancement.
+
+- **Image**: Upscale, Enhance, Sharpen, Denoise, Restore, Face Enhance, Remove Background
+- **Video**: Video Enhancement
+- **API Business**: AI API for developers
+
+Processing is **async** (jobs run on background queue); users pay via credits.
 
 ## Tech Stack
-- **Next.js** (App Router, React Server Components, React 19)
-- **TypeScript** (strict mode, no `any`)
-- **Tailwind CSS v4** (CSS-first, no config file — config is in `src/styles/global.css`)
-- **Drizzle ORM** + **PostgreSQL** (PGlite in local dev)
-- **Clerk** — authentication; **public `/pricing`** embeds Clerk Billing `<PricingTable />` (plans configured in Clerk Dashboard, not hard-coded in the app)
-- **next-intl** — i18n (locales: `en`, `fr`)
-- **Arcjet** — security / bot protection (in middleware)
-- **Sentry** + **PostHog** + **LogTape** — observability
-- **Zod** — validation; **React Hook Form** — forms
-- **Vitest** (unit/component) + **Playwright** (integration/E2E)
+
+| Layer | Choice |
+|-------|--------|
+| Framework | Next.js 16 (App Router, React Server Components, React 19) |
+| Language | TypeScript strict mode, no `any` |
+| Styling | Tailwind CSS v4 — theme tokens in `src/styles/global.css` (no `tailwind.config.ts`) |
+| UI Library | HeroUI v3 (CSS-first, compound pattern) + `@/components/ui/` wrappers |
+| Icons | **Lucide React** — import directly, do not inline SVG |
+| Auth | Clerk (user management + Billing embed on `/pricing`) |
+| Database | Drizzle ORM + PostgreSQL (PGlite in local dev) |
+| i18n | next-intl v4 (locales: `en`, `fr`) |
+| Security | Arcjet (middleware bot protection) |
+| Observability | Sentry + PostHog + LogTape |
+| Validation | Zod + React Hook Form |
+| Animation | Framer Motion |
+| Testing | Vitest (unit/component) + Playwright (integration/E2E) + Storybook |
 
 ## Key Architecture
-- All routes live under `src/app/[locale]/`
-- **Page UI** — feature-specific components live under `src/components/pages/<area>/...` (e.g. `boost/enhance-image`, `marketing`, `pricing-plans`); route `page.tsx` files compose them and stay small
-- Route groups: `(auth)` for protected pages, `(marketing)` for public landing + pricing
-- Image upload → job created in DB → background processor picks up → result stored → user notified
-- Middleware = `src/proxy.ts` (NOT `middleware.ts`) — keeps bundle small
-- Env vars MUST go through `src/libs/core/Env.ts` — never read `process.env` directly in app code
-- DB singleton in `src/libs/core/DB.ts` — avoids duplicate pool connections during HMR
-- All user-visible strings must use `next-intl` translations
+
+- All routes under `src/app/[locale]/`
+- **Middleware**: `src/proxy.ts` (NOT `middleware.ts`)
+- **Env vars**: MUST go through `src/libs/core/Env.ts` — never `process.env` directly
+- **DB singleton**: `src/libs/core/DB.ts`
+- All user-visible strings → `next-intl` translations (`src/locales/en.json`, `fr.json`)
+- **Named exports only** (no default exports except Next.js pages/layouts)
+- **`type` over `interface`**
+
+## Design Tokens
+
+All values live in `src/styles/global.css`. Use Tailwind `@theme` tokens — no raw hex in JSX.
+
+| Role | Token | Tailwind |
+|------|-------|----------|
+| Background | `--color-page` (#000) | `bg-page` |
+| Card / panel | `--color-surface`, `--color-elevated` | `bg-surface`, `bg-elevated` |
+| Brand gold | `--color-brand`, `--color-brand-light` | `bg-brand`, `text-brand-light` |
+| Text | `--color-foreground`, `--color-muted`, `--color-subtle` | `text-foreground`, `text-muted` |
+| Glass panels | — | `glass` class (`backdrop-blur` + translucent fill + hairline border) |
+| Hero glow | `--gradient-hero` | `style={{ background: 'var(--gradient-hero)' }}` |
+| CTA fill | `--gradient-cta`, `--gradient-brand` | same |
+
+Opacity / borders: `border-white/8`, `border-brand/25`, `bg-white/3`.
+
+See `.cursor/rules/ui-design-system.mdc` for full design reference.
+
+## Project Structure
+
+```
+src/
+├── app/                     # App Router (all pages under [locale]/)
+│   ├── [locale]/
+│   │   ├── (auth)/         # sign-in, sign-up
+│   │   ├── (marketing)/    # home, features, pricing, tools
+│   │   ├── (workspace)/    # dashboard (authenticated)
+│   │   └── api/           # Route handlers
+├── components/
+│   ├── ui/                 # HeroUI wrappers (Button, Switch, Slider, DropZone…)
+│   ├── common/             # Marketing primitives (SectionHeader, Badge, Card…)
+│   ├── layout/             # SiteHeader (glass), SiteFooter, BoostHeader
+│   ├── pages/             # Route-specific sections
+│   │   ├── home/
+│   │   ├── bg-remover/
+│   │   ├── video-enhancer/
+│   │   └── boost/enhance-image/enhance-video/
+│   ├── analytics/
+│   └── providers/          # QueryClient, Toast, etc.
+├── hooks/react-query/      # useQuery / useMutation hooks
+├── libs/
+│   ├── core/               # Env, DB, Logger
+│   ├── i18n/               # next-intl config + routing helpers
+│   ├── persistence/         # Server DB (users/, enhancer/)
+│   ├── apis/               # Browser HTTP clients
+│   └── react-query/        # QueryClient factory
+├── types/                  # TypeScript types (domain, API)
+├── models/                 # Zod schemas
+├── constants/               # Feature flags, routes, query key factories
+├── locales/                # i18n JSON (en, fr)
+├── styles/global.css       # Tailwind v4 @theme + CSS vars
+└── utils/                  # Pure helpers
+```
+
+## Route Groups
+
+| Group | Pages | Auth |
+|-------|-------|------|
+| `(auth)` | sign-in, sign-up | public |
+| `(marketing)` | home, features, pricing, bg-remover, video-enhancer | public |
+| `(workspace)` | dashboard, enhance, history | authenticated |
 
 ## Domain Concepts
-- **Job** — a single image processing task with status: `pending | processing | completed | failed`
-- **Credit** — unit of usage; each job costs credits based on operation type and output size
-- **Operation** — one of: `upscale`, `enhance`, `sharpen`, `denoise`, `restore`, `face_enhance`, `remove_bg`
-- **User** — authenticated via Clerk; has a credit balance tracked in DB
 
-## Core Principles
-- Clarity and consistency over cleverness
-- Match existing patterns — minimal surface-area changes
-- Named exports only (no default exports except Next.js pages/layouts)
-- Absolute imports via `@/` unless same directory (use `./foo` then)
-- `type` over `interface` everywhere
+- **Job** — image/video task; status: `pending | processing | completed | failed`
+- **Credit** — usage unit; cost depends on operation + output size
+- **Operation** — `upscale`, `enhance`, `sharpen`, `denoise`, `restore`, `face_enhance`, `remove_bg`
+- **User** — authenticated via Clerk; credit balance tracked in DB
+
+## Commits
+
+Conventional Commits: `type: summary`. Types: `feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert`.

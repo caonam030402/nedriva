@@ -2,4 +2,14 @@
 alwaysApply: true
 ---
 
-always think & in English or VietNamese
+# Language — Agent Communication
+
+## Think and respond in Simplified Chinese (简体中文)
+
+Use Simplified Chinese for all **agent-to-user** communication — replies, explanations, summaries, questions back to the user.
+
+Exception: if the user writes in English, reply in English.
+
+## All code, comments, and docs stay in English
+
+See `documentation-language.mdc` for the full rule (English-only in code, rules, README, JSDoc, Python).

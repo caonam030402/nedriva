@@ -1,0 +1,387 @@
+---
+description: Code organization rules — where to place enums, const, types, and how to structure each module layer
+globs: "**/*.{ts,tsx}"
+alwaysApply: true
+---
+
+# Code Organization Rules
+
+## Overview
+
+Follow **layered architecture** by domain feature. Never scatter the same kind of artifact across unrelated folders.
+
+```
+src/
+├── types/<feature>/          ← TypeScript interfaces, API shapes, domain types
+├── enums/<feature>.ts        ← String unions used as enums
+├── constants/<feature>/       ← Business constants, config values
+├── constants/<feature>.ts     ← Global constants
+├── models/Schema.ts           ← Drizzle ORM schemas (ONLY file here)
+├── libs/
+│   ├── persistence/<feature>/ ← Server DB access + business logic
+│   ├── apis/<feature>/       ← Browser HTTP clients
+│   └── core/                 ← App-wide infra (Env, DB, Logger)
+├── hooks/react-query/        ← React Query hooks
+└── components/
+    ├── ui/                   ← Atomic UI primitives
+    ├── common/               ← Shared page-level components
+    └── pages/<area>/         ← Feature-specific page sections
+```
+
+---
+
+## Rule 1 — Types: `src/types/<feature>/`
+
+**What goes here**: TypeScript interfaces, API request/response shapes, domain types used in multiple layers.
+
+**One module per domain**: `types/enhancer-image/`, `types/billing/`, `types/affiliate/`.
+
+```typescript
+// types/enhancer-image/historyApi.ts
+export type EnhancerHistoryListRequest = {
+  limit?: number;
+  cursor?: string | null;
+};
+
+export type EnhancerHistoryItem = {
+  id: string;
+  createdAt: string;
+  operation: string;
+  status: string;
+  outputUrl?: string;
+};
+
+export type EnhancerHistoryListResponse = {
+  items: EnhancerHistoryItem[];
+  nextCursor: string | null;
+};
+```
+
+**Naming conventions**:
+| Suffix | Meaning |
+|--------|---------|
+| `Request` | API call input |
+| `Response` | API call output |
+| `Item` | Single item in a list |
+| `State` | React/component state shape |
+| `Options` | Configuration object |
+| `Params` | Query/URL parameters |
+
+**Barrel export per module**:
+```typescript
+// types/enhancer-image/index.ts
+export * from './historyApi';
+export * from './jobApi';
+export * from './processApi';
+export * from './runsApi';
+export * from './state';
+```
+
+**File naming**: lowercase, descriptive (`creditBalanceApi.ts`, `pagination.ts`).
+
+---
+
+## Rule 2 — Enums: `src/enums/<feature>.ts`
+
+**What goes here**: TypeScript string unions used as **enum-like** constants.
+
+**Use string unions + const objects** — never `enum` keyword unless Drizzle requires it.
+
+```typescript
+// enums/enhancer-image.ts
+
+// ✅ String union + const — safe, tree-shakeable
+export const EEnhancerStatus = {
+  QUEUED: 'queued',
+  PROCESSING: 'processing',
+  DONE: 'done',
+  FAILED: 'failed',
+} as const;
+export type TEnhancerStatus = (typeof EEnhancerStatus)[keyof typeof EEnhancerStatus];
+
+// ✅ With labels for UI
+export const EUpscaleModel = {
+  RealWorld: { value: 'real_world', label: 'Real-ESRGAN' },
+  Anime: { value: 'anime', label: 'Real-ESRGAN+ (Anime)' },
+  Prime: { value: 'prime', label: 'Stable Diffusion x4' },
+} as const;
+export type TUpscaleModel = keyof typeof EUpscaleModel;
+```
+
+**Drizzle pgEnum goes in `models/Schema.ts`** — not here. The Drizzle enum drives the DB; the TypeScript const drives the app.
+
+```typescript
+// models/Schema.ts — DB enum only
+export const enhancerJobStatusEnum = pgEnum('enhancer_job_status', [
+  'queued', 'processing', 'done', 'error',
+]);
+```
+
+**When to create a new enum file**:
+| Situation | Action |
+|-----------|--------|
+| Shared across 2+ layers (hooks, components, persistence) | Create `enums/<feature>.ts` |
+| Used in only 1 file | Inline as `const + type` at the top of that file |
+| Driven by DB column | Add `pgEnum` in `models/Schema.ts` + mirror const in `enums/` |
+
+---
+
+## Rule 3 — Constants: `src/constants/<feature>/`
+
+**What goes here**: Business config, magic numbers, default values, route paths.
+
+**Global constants**: flat files at `src/constants/` root.
+
+```typescript
+// constants/apiRoutes.ts
+const API_BASE = '/api';
+const API_V1 = `${API_BASE}/v1`;
+
+export const apiRoutes = {
+  enhancerImage: {
+    process: `${API_BASE}/enhancer-image/process`,
+    jobs: (id: string) => `${API_BASE}/enhancer-image/jobs/${encodeURIComponent(id)}`,
+    history: `${API_BASE}/enhancer-image/history`,
+  },
+} as const;
+```
+
+**Feature constants**: files inside `constants/<feature>/`.
+
+```typescript
+// constants/enhancer-image/enhancerImage.ts
+export const ENHANCER_IMAGE_MAX_FILE_SIZE_MB = 50;
+export const ENHANCER_IMAGE_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+export type EnhancerImageAllowedType = (typeof ENHANCER_IMAGE_ALLOWED_TYPES)[number];
+
+export const CREDIT_COSTS = {
+  upscale_2x: 1,
+  upscale_4x: 2,
+  upscale_8x: 4,
+  upscale_16x: 8,
+  denoise: 1,
+  restore: 2,
+} as const;
+```
+
+**React Query keys**: `constants/reactQueryKeys.ts`.
+
+```typescript
+// constants/reactQueryKeys.ts
+export const reactQueryKeys = {
+  enhancerImage: {
+    all: ['enhancer-image'] as const,
+    histories: () => [...reactQueryKeys.enhancerImage.all, 'history'] as const,
+    historyList: (params: { limit: number; cursor: string | null }) =>
+      [...reactQueryKeys.enhancerImage.histories(), 'list', params] as const,
+    runs: () => [...reactQueryKeys.enhancerImage.all, 'runs'] as const,
+  },
+} as const;
+```
+
+**Naming**: noun phrases, no prefix like `CONST_` or suffix like `_CONSTANT`.
+
+---
+
+## Rule 4 — Persistence: `src/libs/persistence/<feature>/`
+
+**What goes here**: Server-side DB queries, Drizzle operations, business logic that touches the database.
+
+**File-per-operation**: one file per query/mutation, named as a verb phrase.
+
+```
+libs/persistence/
+├── enhancer-image/
+│   ├── index.ts                    ← barrel
+│   ├── enhancerHistoryList.ts      ← list query
+│   ├── enhancerRunsList.ts         ← list query
+│   ├── enhancerProcessedRecords.ts ← read query
+│   ├── processingClient.ts         ← Python service client
+│   └── buildPublicStorageUrl.ts   ← utility
+```
+
+**Pattern**:
+```typescript
+// libs/persistence/enhancer-image/enhancerHistoryList.ts
+export async function getEnhancerHistoryList(
+  executor: ReturnType<typeof db>,
+  userId: string,
+  params: { limit: number; cursor: string | null }
+) {
+  const rows = await executor
+    .select({ /* specific columns only */ })
+    .from(enhancerJobs)
+    .where(and(eq(enhancerJobs.userId, userId), /* ... */))
+    .orderBy(desc(enhancerJobs.createdAt))
+    .limit(params.limit);
+  return rows;
+}
+```
+
+**Rules**:
+- **Select specific columns** — never `select().from(table)` (N+1 risk)
+- **Index on every WHERE/JOIN/ORDER BY column**
+- **Batch reads** instead of N+1 loops
+- **Transaction** for multi-step writes
+- **Executor pattern**: pass `executor` param (DB or transaction) for composability
+
+---
+
+## Rule 5 — API Clients: `src/libs/apis/<feature>/`
+
+**What goes here**: Browser-side HTTP calls to the app's own API routes.
+
+**File-per-endpoint**: match route path structure.
+
+```
+libs/apis/enhancer-image/
+├── index.ts       ← barrel: fetchers + re-export types
+├── history.ts     ← GET /history
+├── job.ts         ← GET /jobs/:id
+└── process.ts     ← POST /process
+```
+
+**Pattern**:
+```typescript
+// libs/apis/enhancer-image/history.ts
+import type { EnhancerHistoryListResponse } from '@/types/enhancer-image';
+import { apiRoutes } from '@/constants/apiRoutes';
+
+export async function fetchEnhancerHistory(
+  params: { limit?: number; cursor?: string | null }
+): Promise<EnhancerHistoryListResponse> {
+  const query = new URLSearchParams();
+  if (params.limit !== undefined) query.set('limit', String(params.limit));
+  if (params.cursor) query.set('cursor', params.cursor);
+
+  return apiFetch(`${apiRoutes.enhancerImage.history}?${query}`, {
+    credentials: 'include',
+  });
+}
+```
+
+**Rules**:
+- Return typed response — never `any`
+- Use `apiRoutes` constants — never raw URL strings
+- Use `apiFetch` (from `httpClient.ts`) for automatic error handling
+- Never call `/api/...` directly in components — go through `libs/apis/`
+
+---
+
+## Rule 6 — React Query Hooks: `src/hooks/react-query/`
+
+**Structure**:
+```
+hooks/react-query/
+├── core/
+│   ├── index.ts
+│   ├── useAppQuery.ts       ← base query wrapper with defaults
+│   ├── useAppMutation.ts
+│   └── useAppInfiniteQuery.ts
+├── enhancer-image/
+│   ├── queries/
+│   │   ├── index.ts
+│   │   └── useEnhancerHistoryQuery.ts
+│   └── mutations/
+│       ├── index.ts
+│       └── useProcessJob.ts
+```
+
+**Pattern**:
+```typescript
+// hooks/react-query/enhancer-image/queries/useEnhancerHistoryQuery.ts
+import { useAppQuery } from '@/hooks/react-query/core/useAppQuery';
+import { reactQueryKeys } from '@/constants/reactQueryKeys';
+import { fetchEnhancerHistory } from '@/libs/apis/enhancer-image/history';
+
+export function useEnhancerHistoryQuery(
+  params: { limit?: number; cursor?: string | null } = {}
+) {
+  return useAppQuery({
+    queryKey: reactQueryKeys.enhancerImage.historyList(params),
+    queryFn: () => fetchEnhancerHistory(params),
+    staleTime: 30_000,
+  });
+}
+```
+
+**Rules**:
+- Query keys from `reactQueryKeys` factory — never inline arrays
+- One file per query/mutation
+- Prefix: `use` for queries, `use` + action verb for mutations (`useProcessJob`)
+- No business logic in hooks — only data fetching orchestration
+
+---
+
+## Rule 7 — Components: `src/components/`
+
+```
+components/
+├── ui/              ← HeroUI wrappers: Button, Input, Switch, DropZone...
+│   └── *.tsx
+├── common/          ← Shared page components: Card, Badge, SectionHeader...
+│   └── *.tsx
+├── pages/<area>/    ← Feature sections: home/, bg-remover/, video-enhancer/
+│   ├── SomeSection.tsx
+│   └── useSomeSection.ts    ← colocation hook
+```
+
+**UI vs Common**:
+| `ui/` | `common/` |
+|--------|-----------|
+| Atomic, no business logic | Has app-specific tokens or logic |
+| Button, Input, Switch | SectionHeader, Badge, Card |
+| Wraps HeroUI primitives | Builds on `ui/` primitives |
+
+**Pages section components**:
+```typescript
+// components/pages/home/HowItWorksSection.tsx
+export const HowItWorksSection = async () => { /* server component */ };
+
+// components/pages/home/HowItWorksSection.mockup.ts  ← pure mockup helpers
+// components/pages/home/useHowItWorksSection.ts       ← client state (if any)
+```
+
+---
+
+## Rule 8 — When to Create a New File
+
+| Situation | Where | Name |
+|-----------|-------|------|
+| Type used by 2+ layers | `types/<feature>/` | `historyApi.ts` |
+| Type used in 1 layer only | Co-locate with layer | `hooks/react-query/enhancer-image/queries/useEnhancerHistoryQuery.ts` |
+| Enum used in 2+ layers | `enums/<feature>.ts` | `enums/enhancer-image.ts` |
+| Enum used in 1 file only | Inline in that file | top of file as `const + type` |
+| DB schema | `models/Schema.ts` | add to existing file |
+| DB pgEnum | `models/Schema.ts` | add to existing `pgEnum` |
+| Constant used in 2+ features | `constants/<feature>.ts` | root-level file |
+| Constant for 1 feature | `constants/<feature>/` | `constants/enhancer-image/enhancerImage.ts` |
+| Server DB logic | `libs/persistence/<feature>/` | verb phrase (`getXxx.ts`) |
+| Browser HTTP call | `libs/apis/<feature>/` | match endpoint (`xxx.ts`) |
+| Query hook | `hooks/react-query/<feature>/` | `useXxxQuery.ts` |
+| Mutation hook | `hooks/react-query/<feature>/mutations/` | `useXxx.ts` |
+| Page section | `components/pages/<area>/` | `XxxSection.tsx` |
+
+**Never create**: `types.ts`, `enums.ts`, `utils.ts`, `helpers.ts` as scattered files.
+
+---
+
+## Anti-Patterns
+
+```typescript
+// ❌ Scatter types across files
+// src/components/pages/home/SomeComponent.tsx
+interface MyType { id: string; name: string; } // type should be in types/
+
+// ❌ Inline raw API URLs
+fetch('/api/enhancer-image/history?limit=20')
+
+// ❌ Inline query keys
+queryKey: ['enhancer-image', 'history', id] // should use reactQueryKeys factory
+
+// ❌ select * from table
+await db.select().from(users)
+
+// ❌ Create types.ts per feature
+// src/types/enhancer-image/types.ts  ← wrong! split by concept
+```
