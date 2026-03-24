@@ -6,10 +6,10 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { BrandLogo } from '@/components/common/BrandLogo';
 import { LocaleSwitcher } from '@/components/common/LocaleSwitcher';
+import { Button } from '@/components/ui/Button';
 import { clerkUserButtonPopoverElements } from '@/libs/core/ClerkUserButtonAppearance';
 import { Link } from '@/libs/i18n/I18nNavigation';
 import { Routes } from '@/utils/Routes';
-import { Button } from '@/components/ui/Button';
 
 type SolutionLabelKey =
   | 'solutions_api_label'
@@ -84,18 +84,8 @@ export const SiteHeader = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-black">
-      {/* Blueprint grid — same language as How it works */}
-      <div
-        className="pointer-events-none absolute inset-0 z-0 opacity-[0.07]"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-        }}
-      />
-      <div className="absolute inset-0 z-0 bg-linear-to-b from-black via-black to-black/95" />
-      <div className="relative z-10 mx-auto grid h-[4.25rem] max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 border-b border-white/8 bg-black/40 backdrop-blur-xl supports-backdrop-filter:bg-black/30">
+      <div className="relative z-10 mx-auto grid h-17 max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-4 sm:px-6 lg:px-8">
         {/* ── Logo ── */}
         <Link href="/" className="min-w-0">
           <BrandLogo />
@@ -161,7 +151,7 @@ export const SiteHeader = () => {
                   <div className="border-t border-white/10 px-2 pt-2 pb-2">
                     <Link
                       href={Routes.affiliateProgram}
-                      className="flex w-full items-center justify-center gap-1.5 rounded-pill border border-white/10 bg-white/[0.03] px-3 py-2 text-center text-xs font-medium text-muted transition-colors hover:border-white/20 hover:bg-white/[0.06] hover:text-foreground"
+                      className="flex w-full items-center justify-center gap-1.5 rounded-pill border border-white/10 bg-white/3 px-3 py-2 text-center text-xs font-medium text-muted transition-colors hover:border-white/20 hover:bg-white/6 hover:text-foreground"
                     >
                       <span className="text-brand-light" aria-hidden>
                         •
@@ -213,7 +203,7 @@ export const SiteHeader = () => {
         {/* ── Mobile hamburger ── */}
         <button
           type="button"
-          className="flex size-9 items-center justify-center justify-self-end rounded-ui-sm text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white sm:hidden"
+          className="flex size-9 items-center justify-center justify-self-end rounded-ui-sm text-zinc-400 transition-colors hover:bg-white/6 hover:text-white sm:hidden"
           aria-label={t('toggle_menu_label')}
           onClick={() => setMobileOpen((prev) => !prev)}
         >
@@ -241,7 +231,7 @@ export const SiteHeader = () => {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="overflow-hidden border-t border-white/10 bg-black sm:hidden"
+            className="overflow-hidden border-t border-white/8 bg-black/50 backdrop-blur-xl supports-backdrop-filter:bg-black/30 sm:hidden"
           >
             <div className="space-y-1 px-4 pt-3 pb-4">
               <p className="mb-1 px-3 text-[11px] font-semibold tracking-widest text-subtle uppercase">
@@ -268,21 +258,21 @@ export const SiteHeader = () => {
               <div className="mt-1 border-t border-white/10 pt-1">
                 <Link
                   href="/pricing"
-                  className="block rounded-ui-md px-3 py-2.5 text-sm font-medium text-zinc-400 hover:bg-white/[0.04] hover:text-white"
+                  className="block rounded-ui-md px-3 py-2.5 text-sm font-medium text-zinc-400 hover:bg-white/4 hover:text-white"
                   onClick={() => setMobileOpen(false)}
                 >
                   {t('pricing_link')}
                 </Link>
                 <Link
                   href={Routes.affiliateProgram}
-                  className="block rounded-ui-md px-3 py-2.5 text-sm font-medium text-zinc-400 hover:bg-white/[0.04] hover:text-white"
+                  className="block rounded-ui-md px-3 py-2.5 text-sm font-medium text-zinc-400 hover:bg-white/4 hover:text-white"
                   onClick={() => setMobileOpen(false)}
                 >
                   {t('affiliate_nav')}
                 </Link>
                 <Link
                   href="/blog"
-                  className="block rounded-ui-md px-3 py-2.5 text-sm font-medium text-zinc-400 hover:bg-white/[0.04] hover:text-white"
+                  className="block rounded-ui-md px-3 py-2.5 text-sm font-medium text-zinc-400 hover:bg-white/4 hover:text-white"
                   onClick={() => setMobileOpen(false)}
                 >
                   {t('blog_link')}
