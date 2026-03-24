@@ -2,6 +2,7 @@ import type { PaginatedListResponse } from '@/types/api/pagination';
 
 /**
  * `useInfiniteQuery` page param is 1-based — matches `GET ?page=` + `buildPagePaginatedResponse`.
+ * @param lastPage
  */
 export function getNextPageParamFromPageMeta(
   lastPage: PaginatedListResponse<unknown>,

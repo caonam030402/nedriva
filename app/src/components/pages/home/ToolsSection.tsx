@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import { SectionHeader } from '@/components/common/SectionHeader';
 import { Link } from '@/libs/i18n/I18nNavigation';
 
 /* ── Tool icons ──────────────────────────────────────────────── */
@@ -187,23 +188,22 @@ export const ToolsSection = async () => {
     <section className="bg-surface py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
 
-        {/* ── Header ── */}
-        <div className="mx-auto mb-14 max-w-2xl text-center">
-          <span className="mb-4 inline-flex items-center gap-2 rounded-pill border border-brand/40 bg-brand/10 px-4 py-1.5 text-sm font-medium text-brand-light">
-            {t('eyebrow_badge')}
-          </span>
-          <h2 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
-            {t('headline')}
-            {' '}
-            <span
-              className="bg-clip-text text-transparent"
-              style={{ backgroundImage: 'var(--gradient-text)' }}
+        <SectionHeader
+          badge={t('eyebrow_badge')}
+          title={t('headline')}
+          titleGradient={t('headline_gradient')}
+          subtitle={t('subtext')}
+          align="left"
+          action={(
+            <Link
+              href="/tools"
+              className="group inline-flex items-center gap-1.5 text-sm font-semibold text-muted transition-colors hover:text-brand-light"
             >
-              {t('headline_gradient')}
-            </span>
-          </h2>
-          <p className="mt-4 text-lg text-muted">{t('subtext')}</p>
-        </div>
+              {t('cta_all')}
+              <ArrowIcon />
+            </Link>
+          )}
+        />
 
         {/* ── Tools grid ── */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -217,17 +217,6 @@ export const ToolsSection = async () => {
               creditLabel={t('credit_badge')}
             />
           ))}
-        </div>
-
-        {/* ── See all CTA ── */}
-        <div className="mt-10 text-center">
-          <Link
-            href="/tools"
-            className="inline-flex items-center gap-2 rounded-pill border border-brand/40 bg-brand/10 px-6 py-2.5 text-sm font-semibold text-brand-light transition-all hover:border-brand/70 hover:bg-brand/20"
-          >
-            {t('cta_all')}
-            <ArrowIcon />
-          </Link>
         </div>
 
       </div>

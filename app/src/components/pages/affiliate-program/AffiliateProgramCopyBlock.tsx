@@ -28,7 +28,7 @@ export function AffiliateProgramCopyBlock(props: Props) {
   };
 
   return (
-    <div className="rounded-2xl border border-white/[0.1] bg-black/25 p-5 sm:p-6">
+    <div className="rounded-card border border-white/[0.07] bg-white/[0.02] p-5 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h3 className="text-lg font-semibold text-foreground">{props.title}</h3>
@@ -44,7 +44,8 @@ export function AffiliateProgramCopyBlock(props: Props) {
       </div>
       <pre
         className="mt-4 max-h-[min(24rem,50vh)] overflow-auto rounded-xl border border-white/10 bg-[#06050a] p-4 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-foreground/85 sm:text-xs"
-        tabIndex={0}
+        role="region"
+        aria-label="Scrollable content"
       >
         {props.text}
       </pre>

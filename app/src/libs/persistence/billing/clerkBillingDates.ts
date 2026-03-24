@@ -1,5 +1,6 @@
 /**
  * Clerk Billing webhook payloads use numeric Unix timestamps — mix of seconds and ms depending on field.
+ * @param value
  */
 export function clerkUnixToDate(value: number | null | undefined): Date | null {
   if (value == null || Number.isNaN(value)) {

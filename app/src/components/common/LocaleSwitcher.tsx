@@ -34,7 +34,12 @@ const ChevronIcon = (props: { open: boolean }) => (
 
 /* ── Component ───────────────────────────────────────────────── */
 
-export const LocaleSwitcher = () => {
+type LocaleSwitcherProps = {
+  /** Merged onto the trigger so parents can align with a fixed toolbar row (e.g. app header). */
+  triggerClassName?: string;
+};
+
+export const LocaleSwitcher = (props: LocaleSwitcherProps) => {
   const t = useTranslations('LocaleSwitcher');
   const router = useRouter();
   const pathname = usePathname();
@@ -61,7 +66,7 @@ export const LocaleSwitcher = () => {
         aria-label={t('change_language')}
         aria-expanded={open}
         onClick={() => setOpen(prev => !prev)}
-        className="flex items-center gap-1.5 rounded-ui-sm px-2.5 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-elevated hover:text-foreground"
+        className={`flex h-9 shrink-0 items-center gap-1.5 rounded-ui-sm px-2.5 text-sm font-medium text-muted transition-colors hover:bg-elevated hover:text-foreground ${props.triggerClassName ?? ''}`}
       >
         <GlobeIcon />
         <span>{current.short}</span>
@@ -74,7 +79,10 @@ export const LocaleSwitcher = () => {
             {/* Backdrop */}
             <div
               className="fixed inset-0 z-40"
+              role="presentation"
               onClick={() => setOpen(false)}
+              onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
+              tabIndex={-1}
             />
 
             {/* Dropdown */}
@@ -83,7 +91,7 @@ export const LocaleSwitcher = () => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -6, scale: 0.97 }}
               transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="absolute right-0 top-full z-50 mt-1.5 w-40 overflow-hidden rounded-card border border-brand/20 bg-elevated shadow-card"
+              className="absolute top-full right-0 z-50 mt-1.5 w-40 overflow-hidden rounded-card border border-brand/20 bg-elevated shadow-card"
             >
               {routing.locales.map((locale) => {
                 const meta = LOCALE_META[locale] ?? { label: locale, short: locale.toUpperCase(), flag: '🌐' };

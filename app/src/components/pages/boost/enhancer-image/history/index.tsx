@@ -1,19 +1,19 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import type { EnhancerHistoryItem } from '@/types/enhancer/historyApi';
+import type { EnhancerHistoryItem } from '@/types/enhancer-image/historyApi';
 import { ChevronLeft, Maximize2, MoreVertical } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { ActionsDropdown } from '@/components/ui/ActionsDropdown';
 import { Button } from '@/components/ui/Button';
 import { PaginationBar } from '@/components/ui/PaginationBar';
-import { useEnhancerHistoryQuery } from '@/hooks/react-query/queries/enhance';
+import { ENHANCER_MY_IMAGES_PAGE_SIZE } from '@/constants/enhancer-image/enhancerImage';
+import { useEnhancerHistoryQuery } from '@/hooks/react-query/enhancer-image/queries';
 import { usePagination } from '@/hooks/usePagination';
 import { Link } from '@/libs/i18n/I18nNavigation';
 import { buildOutputFilename, downloadUrlAsFile } from '@/utils/downloadUrlAsFile';
 import { Routes } from '@/utils/Routes';
-import { ENHANCER_MY_IMAGES_PAGE_SIZE } from '../../../../../constants/enhancerImage';
 import { EnhanceResultModal } from '../EnhanceResultModal';
 
 function dimsLabel(
@@ -46,11 +46,9 @@ function HistoryCard(props: { item: EnhancerHistoryItem; onOpenView: () => void 
   };
 
   const before = dimsLabel(item.inputWidth, item.inputHeight, ({ w, h }) =>
-    t('history_dimensions_px', { w, h }),
-  );
+    t('history_dimensions_px', { w, h }),  );
   const after = dimsLabel(item.outputWidth, item.outputHeight, ({ w, h }) =>
-    t('history_dimensions_px', { w, h }),
-  );
+    t('history_dimensions_px', { w, h }),  );
 
   /** Feedback pill + View — hover only (small screens always on). ⋮ menu stays outside this layer. */
   const hoverExtrasVisible =
@@ -194,6 +192,7 @@ export function EnhancerHistoryMyImagesView(props: EnhancerHistoryMyImagesProps 
 
   useEffect(() => {
     if (data?.pagination.page != null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTotalItems(data.pagination.total ?? 0);
     }
   }, [data]);

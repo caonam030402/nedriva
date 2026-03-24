@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
+import { Cormorant_Garamond } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { PostHogProvider } from '@/components/providers/PostHogProvider';
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
@@ -9,6 +10,12 @@ import { clerkAppearance } from '@/libs/core/ClerkAppearance';
 import { getClerkAuthUrls, getClerkLocalization } from '@/libs/core/clerkAuthUrls';
 import { routing } from '@/libs/i18n/I18nRouting';
 import '@/styles/global.css';
+
+const marketingDisplay = Cormorant_Garamond({
+  subsets: ['latin'],
+  variable: '--font-marketing-display',
+  weight: ['500', '600', '700'],
+});
 
 export const metadata: Metadata = {
   icons: [
@@ -60,7 +67,12 @@ export default async function RootLayout(props: {
 
   // HeroUI: `data-theme="dark"` drives overlay tokens. Clerk wraps the locale tree so marketing pages get session (SignedIn / UserButton).
   return (
-    <html lang={locale} data-theme="dark">
+    <html
+      lang={locale}
+      data-theme="dark"
+      className={marketingDisplay.variable}
+      suppressHydrationWarning
+    >
       <body>
         <ClerkProvider
           appearance={clerkAppearance}

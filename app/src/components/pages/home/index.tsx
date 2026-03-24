@@ -1,5 +1,7 @@
 import { HeroSection } from './HeroSection';
 import { HowItWorksSection } from './HowItWorksSection';
+import { MarketingBreakSection } from './MarketingBreakSection';
+import { ShowcaseSection } from './ShowcaseSection';
 import { SocialProofSection } from './SocialProofSection';
 import { TestimonialsSection } from './TestimonialsSection';
 import { ToolsSection } from './ToolsSection';
@@ -10,12 +12,14 @@ export default function HomeView() {
   return (
     <>
       <HeroSection />
-      <HowItWorksSection />
       <SocialProofSection />
+      <HowItWorksSection />
+      <ShowcaseSection />
       <TestimonialsSection />
       <ToolsSection />
       <UseCaseSection />
       <ValuePropSection />
+      <MarketingBreakSection />
     </>
   );
 }

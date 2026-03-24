@@ -1,11 +1,7 @@
 'use client';
 
-/**
- * Before/after result dialog — HeroUI Modal. Supports queue (live job) and history rows.
- * Compare slider when both before + after URLs exist; otherwise large output preview.
- */
-import type { QueueItem } from '@/types/enhancer';
-import type { EnhancerHistoryItem } from '@/types/enhancer/historyApi';
+import type { EnhancerHistoryItem } from '@/types/enhancer-image/historyApi';
+import type { QueueItem } from '@/types/enhancer-image/state';
 import { useOverlayState } from '@heroui/react';
 import {
   Modal,
@@ -20,6 +16,10 @@ import {
 } from '@heroui/react/modal';
 import { Camera, Share2, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+/**
+ * Before/after result dialog — HeroUI Modal. Supports queue (live job) and history rows.
+ * Compare slider when both before + after URLs exist; otherwise large output preview.
+ */
 import { BeforeAfterCompare } from '@/components/common/BeforeAfterCompare';
 import { EQueueStatus, EScaleFactor } from '@/enums/enhancer-image';
 import { EnhancerOutputDownloadButton } from './EnhancerOutputDownloadButton';
@@ -54,7 +54,7 @@ function MotionComingPill(props: { className?: string }) {
     >
       <Camera size={13} className="shrink-0" />
       <span>{t('modal_motion_coming')}</span>
-      <Sparkles size={12} className="shrink-0 text-violet-600" />
+      <Sparkles size={12} className="shrink-0 text-brand" />
     </button>
   );
 }
@@ -216,7 +216,7 @@ export function EnhanceResultModal(props: EnhanceResultModalProps) {
                     <button
                       type="button"
                       onClick={handleCloseReprocess}
-                      className="min-h-10 flex-1 rounded-xl bg-linear-to-r from-violet-600 to-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-900/30 transition-opacity hover:opacity-95"
+                      className="min-h-10 flex-1 rounded-xl bg-linear-to-r from-brand to-yellow-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-amber-900/30 transition-opacity hover:opacity-95"
                     >
                       {t('modal_cta_upscale_x', { n: 4 })}
                     </button>
@@ -225,7 +225,7 @@ export function EnhanceResultModal(props: EnhanceResultModalProps) {
                       outputUrl={afterUrl}
                       originalFileName={downloadBaseName}
                       ariaLabel={t('modal_download')}
-                      className="min-h-10 flex-1 rounded-xl bg-linear-to-r from-violet-600 to-fuchsia-600 px-4 py-2.5 text-center text-sm font-semibold text-white shadow-lg shadow-violet-900/30 transition-opacity hover:opacity-95 disabled:opacity-60"
+                      className="min-h-10 flex-1 rounded-xl bg-linear-to-r from-brand to-yellow-500 px-4 py-2.5 text-center text-sm font-semibold text-white shadow-lg shadow-amber-900/30 transition-opacity hover:opacity-95 disabled:opacity-60"
                     >
                       {t('modal_download')}
                     </EnhancerOutputDownloadButton>

@@ -1,19 +1,12 @@
 'use client';
 
 import type { EScaleFactor } from '@/enums/enhancer-image';
-import type { OpsState, QueueItem } from '@/types/enhancer';
-import type { EnhancerRunItem } from '@/types/enhancer/runsApi';
+import type { EnhancerRunItem } from '@/types/enhancer-image/runsApi';
+import type { OpsState, QueueItem } from '@/types/enhancer-image/state';
 import { toast } from '@heroui/react/toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { reactQueryKeys } from '@/constants/reactQueryKeys';
-import { EQueueStatus, ESizeMode } from '@/enums/enhancer-image';
-import { useProcessJob } from '@/hooks/react-query/mutations/enhance/useProcessJob';
-import { useEnhancerRunsInfiniteQuery } from '@/hooks/react-query/queries/enhance';
-import { userCreditBalanceQueryOptions } from '@/hooks/react-query/queries/user/useUserCreditBalanceQuery';
-import { useInfiniteScrollTrigger } from '@/hooks/useInfiniteScrollTrigger';
-import { deleteEnhancerRun } from '@/libs/apis/enhancer';
 import {
   calcCredits,
   ENHANCER_MAX_CONCURRENT_PROCESSING,
@@ -22,12 +15,19 @@ import {
   ENHANCER_MAX_UPLOAD_FILE_MB,
   ENHANCER_QUEUE_TABLE_PAGE_SIZE,
   INITIAL_OPS,
-} from '../../../../constants/enhancerImage';
-import { countEnhancerReadyPlusProcessingRows } from '../../../../libs/helpers/enhancer-image/countEnhancerProcessingRows';
+} from '@/constants/enhancer-image/enhancerImage';
+import { reactQueryKeys } from '@/constants/reactQueryKeys';
+import { EQueueStatus, ESizeMode } from '@/enums/enhancer-image';
+import { countEnhancerReadyPlusProcessingRows } from '@/helpers/enhancer-image/countEnhancerProcessingRows';
 import {
   enhancerRunToViewModel,
   queueItemToViewModel,
-} from '../../../../libs/helpers/enhancer-image/queueRowViewModel';
+} from '@/helpers/enhancer-image/queueRowViewModel';
+import { useProcessJob } from '@/hooks/react-query/enhancer-image/mutations/useProcessJob';
+import { useEnhancerRunsInfiniteQuery } from '@/hooks/react-query/enhancer-image/queries';
+import { userCreditBalanceQueryOptions } from '@/hooks/react-query/user/queries/useUserCreditBalanceQuery';
+import { useInfiniteScrollTrigger } from '@/hooks/useInfiniteScrollTrigger';
+import { deleteEnhancerRun } from '@/libs/apis/enhancer-image';
 
 export type EnhancerTableRow =
   | { kind: 'local'; item: QueueItem }

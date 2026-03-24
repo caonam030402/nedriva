@@ -1,8 +1,4 @@
-import type { UserCreditsResponse } from '@/types/creditsApi';
-import { apiRoutes } from '@/constants/apiRoutes';
-import { apiFetch } from '@/libs/apis/httpClient';
-
-/** `GET /api/credits` — Clerk session required. */
-export async function fetchUserCreditBalance(): Promise<UserCreditsResponse> {
-  return apiFetch<UserCreditsResponse>(apiRoutes.credits);
-}
+/**
+ * @deprecated Prefer `@/libs/apis/user` — kept for stable import paths.
+ */
+export * from './user/credits';

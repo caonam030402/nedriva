@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/libs/i18n/I18nNavigation';
+import { Button } from '@/components/ui/Button';
 
 type UseCaseBadgeKey = 'ecommerce_badge' | 'portrait_badge' | 'restore_badge' | 'realestate_badge';
 type UseCaseTitleKey = 'ecommerce_title' | 'portrait_title' | 'restore_title' | 'realestate_title';
@@ -150,10 +151,10 @@ export const UseCaseSection = async () => {
 
         {/* ── Header ── */}
         <div className="mx-auto mb-14 max-w-2xl text-center">
-          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/15 px-4 py-1.5 text-sm font-medium text-violet-300">
+          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/15 px-4 py-1.5 text-sm font-medium text-brand-light">
             {t('eyebrow_badge')}
           </span>
-          <h2 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+          <h2 className="font-display text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
             {t('heading')}
           </h2>
           <p className="mt-4 text-lg text-muted">
@@ -183,15 +184,13 @@ export const UseCaseSection = async () => {
             <p className="font-semibold text-foreground">{t('no_use_case_title')}</p>
             <p className="mt-0.5 text-sm text-muted">{t('no_use_case_desc')}</p>
           </div>
-          <Link
-            href="/sign-up"
-            className="inline-flex shrink-0 items-center gap-2 rounded-pill px-6 py-2.5 text-sm font-semibold text-white shadow-cta transition-transform hover:scale-[1.03]"
-            style={{ background: 'var(--gradient-cta)' }}
-          >
-            {t('cta_try_free')}
-            <svg className="size-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
+          <Link href="/sign-up" className="inline-flex shrink-0">
+            <Button variant="primary" size="md" className="gap-2">
+              {t('cta_try_free')}
+              <svg className="size-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </Button>
           </Link>
         </div>
 

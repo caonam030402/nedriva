@@ -19,6 +19,7 @@ export type UseInfiniteScrollTriggerParams = {
 
 /**
  * Sentinel at the list bottom; when it intersects `scrollRoot`, calls `fetchNextPage`.
+ * @param params
  */
 export function useInfiniteScrollTrigger(
   params: UseInfiniteScrollTriggerParams,

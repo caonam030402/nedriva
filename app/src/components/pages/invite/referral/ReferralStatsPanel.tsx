@@ -36,7 +36,7 @@ function StatCard(props: {
   const className =
     'flex h-full flex-col rounded-xl border border-white/10 bg-black/30 px-4 py-3.5 text-left transition-colors';
   const interactiveClass = onPress
-    ? ' cursor-pointer hover:border-white/20 hover:bg-black/40 focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:outline-none'
+    ? ' cursor-pointer hover:border-white/20 hover:bg-black/40 focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none'
     : '';
 
   const inner = (

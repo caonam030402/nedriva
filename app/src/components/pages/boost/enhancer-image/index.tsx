@@ -7,16 +7,16 @@ import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { DropZone } from '@/components/ui/DropZone';
 import { Tabs } from '@/components/ui/Tabs';
-import { EQueueStatus } from '@/enums/enhancer-image';
-import { Link } from '@/libs/i18n/I18nNavigation';
-import { enhancerRunToHistoryItem } from '@/libs/helpers/enhancer-image/enhancerRunToHistoryItem';
-import { Routes } from '@/utils/Routes';
 import {
   ENHANCER_QUEUE_GRID_CLASS,
   ENHANCER_QUEUE_ROW_GAP_CLASS,
   FILE_LIST_HEADERS,
   UPSCALE_MODELS,
-} from '../../../../constants/enhancerImage';
+} from '@/constants/enhancer-image/enhancerImage';
+import { EQueueStatus } from '@/enums/enhancer-image';
+import { enhancerRunToHistoryItem } from '@/helpers/enhancer-image/enhancerRunToHistoryItem';
+import { Link } from '@/libs/i18n/I18nNavigation';
+import { Routes } from '@/utils/Routes';
 import { EnhanceResultModal } from './EnhanceResultModal';
 import { OperationsPanel } from './OperationsPanel';
 import { PresetsPanel } from './PresetsPanel';
@@ -96,9 +96,9 @@ export function EnhancerImageView() {
       <EnhanceResultModal payload={modalPayload} onClose={() => setPreview(null)} />
 
       {/* ══ LEFT PANEL ══════════════════════════════════════════ */}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-b border-white/8 lg:border-r lg:border-b-0">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-b border-white/10 lg:border-r lg:border-b-0">
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-white/8 px-4 py-2.5">
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-white/10 px-4 py-2.5">
           <span className="text-[10px] font-bold tracking-widest text-subtle uppercase">
             {t('queue_header')}
           </span>
@@ -223,7 +223,7 @@ export function EnhancerImageView() {
       {/* ══ RIGHT PANEL ═════════════════════════════════════════ */}
       <div
         className={
-          'flex min-h-0 w-full shrink-0 flex-col overflow-hidden border-t border-white/8 ' +
+          'flex min-h-0 w-full shrink-0 flex-col overflow-hidden border-t border-white/10 ' +
           'h-[clamp(260px,55vh,620px)] min-h-[200px] ' +
           'lg:h-full lg:max-h-none lg:min-h-0 lg:w-72 lg:shrink-0 lg:border-t-0 xl:w-80'
         }

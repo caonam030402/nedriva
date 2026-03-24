@@ -1,4 +1,8 @@
-/** Page numbers to render with optional ellipsis (1-based). */
+/**
+ * Page numbers to render with optional ellipsis (1-based).
+ * @param currentPage
+ * @param totalPages
+ */
 export function buildVisiblePageItems(
   currentPage: number,
   totalPages: number,

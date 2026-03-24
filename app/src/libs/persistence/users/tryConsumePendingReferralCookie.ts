@@ -1,20 +1,10 @@
 import { eq, sql } from 'drizzle-orm';
 import { cookies } from 'next/headers';
-import {
-  PENDING_REFERRAL_COOKIE,
-  referralCreditsPerPersonForEmail,
-} from '@/constants/referral';
+import { PENDING_REFERRAL_COOKIE, referralCreditsPerPersonForEmail } from '@/constants/referral';
 import { db } from '@/libs/core/DB';
 import { logger } from '@/libs/core/Logger';
 import { users } from '@/models/Schema';
-
-function normalizeRefCode(raw: string): string | null {
-  const t = raw.trim().toLowerCase().replaceAll(/[^a-z0-9]/g, '');
-  if (t.length < 4 || t.length > 16) {
-    return null;
-  }
-  return t;
-}
+import { normalizeRefCode } from '@/utils/referralLink';
 
 /**
  * Read `pending_referral_code` cookie; if valid, attach referrer + grant credits (idempotent).
@@ -48,7 +38,7 @@ export async function tryConsumePendingReferralCookie(inviteeUserId: string): Pr
   const perPerson = referralCreditsPerPersonForEmail(invitee.email);
 
   let granted = false;
-  await db.transaction(async tx => {
+  await db.transaction(async (tx) => {
     const [again] = await tx.select().from(users).where(eq(users.id, inviteeUserId)).limit(1);
     if (!again || again.referredByUserId != null || again.referralBonusAppliedAt != null) {
       return;

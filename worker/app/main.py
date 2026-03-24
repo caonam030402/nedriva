@@ -6,8 +6,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import router
-from app.api.video_routes import video_router
+from app.modules.image_enhancer.routes import image_enhancer_router
+from app.modules.video_enhancer.routes import video_enhancer_router
+from app.modules.background_remover.routes import background_remover_router
 from app.config import get_settings
 
 logging.basicConfig(
@@ -48,8 +49,9 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    app.include_router(router, prefix="/api/v1")
-    app.include_router(video_router, prefix="/api/v1/video")
+    app.include_router(image_enhancer_router, prefix="/api/v1/image-enhancer")
+    app.include_router(video_enhancer_router, prefix="/api/v1/video-enhancer")
+    app.include_router(background_remover_router, prefix="/api/v1/background-remover")
 
     return app
 

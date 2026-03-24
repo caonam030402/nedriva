@@ -8,7 +8,7 @@ import { apiRoutes } from '@/constants/apiRoutes';
  */
 export function ClearPendingReferralCookie(): null {
   useEffect(() => {
-    void fetch(apiRoutes.referralsClearPendingCookie, { method: 'POST', credentials: 'include' });
+    void fetch(apiRoutes.referrals.clearPendingCookie, { method: 'POST', credentials: 'include' });
   }, []);
   return null;
 }

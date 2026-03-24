@@ -36,7 +36,7 @@ export const SocialProofSection = (props: SocialProofSectionProps) => {
           <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-linear-to-l from-surface to-transparent" />
 
           {/* Infinite scroll track */}
-          <div className="flex w-max animate-marquee items-center gap-12 hover:paused">
+          <div className="animate-marquee flex w-max items-center gap-12 hover:paused">
             {doubled.map((logo, i) => (
               <div
                 key={`${logo.name}-${i}`}

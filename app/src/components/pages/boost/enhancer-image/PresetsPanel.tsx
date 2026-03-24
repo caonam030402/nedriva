@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { SelectableList } from '@/components/ui/SelectableList';
-import { PRESET_GROUPS } from '../../../../constants/enhancerImage';
+import { PRESET_GROUPS } from '@/constants/enhancer-image/enhancerImage';
 
 type Props = { credits: number };
 

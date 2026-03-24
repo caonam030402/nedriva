@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     storage_public_base_url: str = ""       # public URL prefix for output files
 
     # Processing
+    # Number of concurrent jobs per worker (0 = default 1). Increase for I/O-bound; keep 1 for CPU/GPU-bound.
+    max_jobs_image: int = 0
+    max_jobs_video: int = 0
+    max_jobs_bg_remover: int = 0
+
     max_image_size_mb: int = 50
     max_upscale_mp: int = 512              # max megapixels after upscale
     # On CPU (local dev), downscale input to this many MP before processing.

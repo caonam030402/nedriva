@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from '@/libs/i18n/I18nNavigation';
-import { ReferralStatsPanel } from './ReferralStatsPanel';
 import { CopyReferralLinkButton } from './CopyReferralLinkButton';
+import { ReferralStatsPanel } from './ReferralStatsPanel';
 
 type Labels = {
   badge: string;
@@ -133,7 +133,7 @@ function RewardTierCard(props: {
 }
 
 /**
- * Decorative illustration (SVG) — violet / emerald tones matching the invite page.
+ * Decorative illustration (SVG) — gold / amber tones matching the invite page.
  * @param props - SVG root props
  * @param props.className - Size / placement (Tailwind)
  */
@@ -141,9 +141,9 @@ function ReferralShareIllustration(props: { className?: string }) {
   return (
     <svg viewBox="0 0 200 200" className={props.className} aria-hidden>
       <defs>
-        <linearGradient id="invite-art-violet" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.95" />
-          <stop offset="100%" stopColor="#e879f9" stopOpacity="0.85" />
+        <linearGradient id="invite-art-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#e8c547" stopOpacity="0.95" />
+          <stop offset="100%" stopColor="#e8a23a" stopOpacity="0.85" />
         </linearGradient>
         <linearGradient id="invite-art-mint" x1="0%" y1="100%" x2="100%" y2="0%">
           <stop offset="0%" stopColor="#34d399" stopOpacity="0.9" />
@@ -157,19 +157,19 @@ function ReferralShareIllustration(props: { className?: string }) {
           </feMerge>
         </filter>
       </defs>
-      <circle cx="100" cy="100" r="78" fill="url(#invite-art-violet)" opacity="0.12" />
+      <circle cx="100" cy="100" r="78" fill="url(#invite-art-gold)" opacity="0.12" />
       <circle
         cx="100"
         cy="100"
         r="58"
         fill="none"
-        stroke="url(#invite-art-violet)"
+        stroke="url(#invite-art-gold)"
         strokeWidth="1"
         opacity="0.35"
       />
       <path
         d="M52 102h36M112 102h36"
-        stroke="url(#invite-art-violet)"
+        stroke="url(#invite-art-gold)"
         strokeWidth="3"
         strokeLinecap="round"
         opacity="0.55"
@@ -180,7 +180,7 @@ function ReferralShareIllustration(props: { className?: string }) {
           cy="102"
           r="22"
           fill="#1e1b2e"
-          stroke="url(#invite-art-violet)"
+          stroke="url(#invite-art-gold)"
           strokeWidth="2"
         />
         <circle
@@ -198,7 +198,7 @@ function ReferralShareIllustration(props: { className?: string }) {
           height="32"
           rx="10"
           fill="#1a1625"
-          stroke="url(#invite-art-violet)"
+          stroke="url(#invite-art-gold)"
           strokeWidth="2"
         />
         <path
@@ -208,8 +208,8 @@ function ReferralShareIllustration(props: { className?: string }) {
           strokeLinecap="round"
         />
       </g>
-      <circle cx="100" cy="44" r="4" fill="#e879f9" opacity="0.8" />
-      <circle cx="156" cy="64" r="3" fill="#a78bfa" opacity="0.65" />
+      <circle cx="100" cy="44" r="4" fill="#f5d978" opacity="0.8" />
+      <circle cx="156" cy="64" r="3" fill="#e8c547" opacity="0.65" />
       <circle cx="44" cy="64" r="3" fill="#34d399" opacity="0.55" />
     </svg>
   );
@@ -276,9 +276,9 @@ export function InviteReferralExperience(props: Props) {
         {/* ── Reward row: equal height, consistent layout ── */}
         <div className="mb-10 grid grid-cols-1 items-stretch gap-3 sm:mb-12 sm:grid-cols-3 sm:gap-4">
           <RewardTierCard
-            borderClass="border-violet-500/20"
-            bgClass="bg-violet-500/8"
-            iconWrapClass="bg-violet-500/20 text-violet-200"
+            borderClass="border-brand/20"
+            bgClass="bg-brand/8"
+            iconWrapClass="bg-brand/20 text-brand-light"
             icon={<BriefcaseIcon className="size-6" />}
             label={labels.tierWorkLabel}
             value={
@@ -292,9 +292,9 @@ export function InviteReferralExperience(props: Props) {
             footer={null}
           />
           <RewardTierCard
-            borderClass="border-fuchsia-500/20"
-            bgClass="bg-fuchsia-500/7"
-            iconWrapClass="bg-fuchsia-500/20 text-fuchsia-200"
+            borderClass="border-accent/25"
+            bgClass="bg-accent/8"
+            iconWrapClass="bg-accent/20 text-accent-light"
             icon={<MailIcon className="size-6" />}
             label={labels.tierPersonalLabel}
             value={
@@ -328,14 +328,14 @@ export function InviteReferralExperience(props: Props) {
           style={{
             background:
               'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(18,15,30,0.5) 100%)',
-            boxShadow: '0 24px 80px -40px rgba(109, 40, 217, 0.45)',
+            boxShadow: '0 24px 80px -40px rgba(232, 197, 71, 0.2)',
           }}
         >
           <div className="p-6 sm:p-8">
             <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(180px,260px)] lg:gap-10">
               <div className="mx-auto w-full max-w-xl space-y-4 text-center lg:mx-0 lg:max-w-none lg:text-left">
                 <div>
-                  <p className="text-xs font-semibold tracking-wider text-violet-200/90 uppercase">
+                  <p className="text-xs font-semibold tracking-wider text-brand-light/90 uppercase">
                     {labels.linkCardTitle}
                   </p>
                   <p className="mt-1 text-sm text-muted">{labels.linkLabel}</p>
@@ -344,7 +344,7 @@ export function InviteReferralExperience(props: Props) {
                   <input
                     readOnly
                     value={link}
-                    className="w-full rounded-xl border border-white/10 bg-black/35 px-3.5 py-3.5 pr-4 text-left font-mono text-[11px] leading-relaxed text-foreground/90 shadow-inner ring-violet-500/25 transition-shadow outline-none focus-visible:ring-2 sm:text-xs"
+                    className="w-full rounded-xl border border-white/10 bg-black/35 px-3.5 py-3.5 pr-4 text-left font-mono text-[11px] leading-relaxed text-foreground/90 shadow-inner ring-brand/25 transition-shadow outline-none focus-visible:ring-2 sm:text-xs"
                     aria-label={labels.linkLabel}
                   />
                   <div
@@ -355,7 +355,7 @@ export function InviteReferralExperience(props: Props) {
                 <div className="flex justify-center lg:justify-start">
                   <CopyReferralLinkButton
                     link={link}
-                    className="min-h-12 w-full max-w-sm rounded-xl font-semibold shadow-[0_4px_24px_rgba(139,92,246,0.3)] sm:max-w-none lg:w-auto lg:min-w-[min(100%,280px)]"
+                    className="min-h-12 w-full max-w-sm rounded-xl font-semibold shadow-[0_4px_24px_rgba(232,197,71,0.28)] sm:max-w-none lg:w-auto lg:min-w-[min(100%,280px)]"
                   />
                 </div>
               </div>

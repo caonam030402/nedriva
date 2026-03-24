@@ -18,25 +18,31 @@ import type {
   VideoEnhanceOptions,
   VideoOutputFormat,
   VideoOutputSize,
-} from '@/types/videoEnhancement';
-import { AlertCircle, CheckCircle2, Film, Loader2, RotateCcw, X } from 'lucide-react';
+} from '@/types/enhancer-video/videoEnhancement';
+import { AlertCircle, Film, Loader2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { DropZone } from '@/components/ui/DropZone';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
-
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
-import { useEnhanceVideo } from '@/hooks/react-query/mutations/video/useEnhanceVideo';
-import { useUploadVideo } from '@/hooks/react-query/mutations/video/useUploadVideo';
-import { useVideoJobStatus } from '@/hooks/react-query/queries/video/useVideoJobStatus';
+import {
+  EEnhancementStyle,
+  EUpscaleLevel,
+  EVideoOutputFormat,
+  EVideoOutputSize,
+  EVideoStatus,
+} from '@/enums/enhancer-video';
+import { useEnhanceVideo } from '@/hooks/react-query/enhancer-video/mutations/useEnhanceVideo';
+import { useUploadVideo } from '@/hooks/react-query/enhancer-video/mutations/useUploadVideo';
+import { useVideoJobStatus } from '@/hooks/react-query/enhancer-video/queries/useVideoJobStatus';
 import { ResultPlayer } from './ResultPlayer';
 
 /* ── Credit cost helpers ──────────────────────────────────────── */
 
 function creditCost(size: VideoOutputSize): number {
-  if (size === '4k') return 15;
-  if (size === '2k') return 10;
+  if (size === EVideoOutputSize.K4) return 15;
+  if (size === EVideoOutputSize.K2) return 10;
   return 8;
 }
 
@@ -96,7 +102,7 @@ export function EnhancerVideoView() {
   const [denoise, setDenoise] = useState(true);
   const [deblur, setDeblur] = useState(false);
   const [faceEnhance, setFaceEnhance] = useState(false);
-  const [style, setStyle] = useState<'cinematic' | 'social' | 'natural'>('natural');
+  const [style, setStyle] = useState<EEnhancementStyle>(EEnhancementStyle.NATURAL);
 
   // ── Upload state ───────────────────────────────────────────
   const [file, setFile] = useState<File | null>(null);
@@ -126,7 +132,7 @@ export function EnhancerVideoView() {
 
   // ── Poll result when status is 'done' ─────────────────────
   useEffect(() => {
-    if (statusData?.status !== 'done') return;
+    if (statusData?.status !== EVideoStatus.DONE) return;
     if (phase === 'done') return;
 
     const fetchResult = async () => {
@@ -156,9 +162,9 @@ export function EnhancerVideoView() {
     if (prev === statusData.status) return; // already handled this status
     lastProcessedStatusRef.current = statusData.status;
 
-    if (statusData.status === 'done') {
+    if (statusData.status === EVideoStatus.DONE) {
       // Download URL fetched in the other effect
-    } else if (statusData.status === 'failed') {
+    } else if (statusData.status === EVideoStatus.FAILED) {
       failedStatusTimerRef.current = setTimeout(() => {
         setPhase('failed');
         setErrorMsg(statusData.errorMessage ?? 'Processing failed');
@@ -218,11 +224,11 @@ export function EnhancerVideoView() {
       // 2. Submit enhancement job
       // Map UI size to API upscaleFactor
       const upscaleFactorMap: Record<VideoOutputSize, VideoEnhanceOptions['upscaleFactor']> = {
-        auto: 'auto',
-        hd: 'auto',
-        fhd: 'auto',
-        '2k': '2x',
-        '4k': '4x',
+        auto: EUpscaleLevel.AUTO,
+        hd: EUpscaleLevel.AUTO,
+        fhd: EUpscaleLevel.AUTO,
+        '2k': EUpscaleLevel.X2,
+        '4k': EUpscaleLevel.X4,
       };
       const enhanceOptions: VideoEnhanceOptions = {
         upscaleFactor: upscaleFactorMap[size],
@@ -370,12 +376,12 @@ export function EnhancerVideoView() {
               value={size}
               onChange={(id) => setSize(id as VideoOutputSize)}
               options={[
-                { id: 'auto', label: t('size_auto') },
-                { id: 'hd', label: t('size_hd') },
-                { id: 'fhd', label: t('size_fhd') },
-                { id: '2k', label: t('size_2k') },
+                { id: EVideoOutputSize.AUTO, label: t('size_auto') },
+                { id: EVideoOutputSize.HD, label: t('size_hd') },
+                { id: EVideoOutputSize.FHD, label: t('size_fhd') },
+                { id: EVideoOutputSize.K2, label: t('size_2k') },
                 {
-                  id: '4k',
+                  id: EVideoOutputSize.K4,
                   label: t('size_4k'),
                   locked: true,
                   lockedTooltip: t('size_4k_locked'),
@@ -395,29 +401,29 @@ export function EnhancerVideoView() {
                 id="auto"
                 label={t('format_auto')}
                 tooltip={t('format_auto_tip')}
-                selected={format === 'auto'}
-                onSelect={() => setFormat('auto')}
+                selected={format === EVideoOutputFormat.AUTO}
+                onSelect={() => setFormat(EVideoOutputFormat.AUTO)}
               />
               <FormatPill
                 id="mp4"
                 label={t('format_mp4')}
                 tooltip={t('format_mp4_tip')}
-                selected={format === 'mp4'}
-                onSelect={() => setFormat('mp4')}
+                selected={format === EVideoOutputFormat.MP4}
+                onSelect={() => setFormat(EVideoOutputFormat.MP4)}
               />
               <FormatPill
                 id="webm"
                 label={t('format_webm')}
                 tooltip={t('format_webm_tip')}
-                selected={format === 'webm'}
-                onSelect={() => setFormat('webm')}
+                selected={format === EVideoOutputFormat.WEBM}
+                onSelect={() => setFormat(EVideoOutputFormat.WEBM)}
               />
               <FormatPill
                 id="mov"
                 label={t('format_mov')}
                 tooltip={t('format_mov_tip')}
-                selected={format === 'mov'}
-                onSelect={() => setFormat('mov')}
+                selected={format === EVideoOutputFormat.MOV}
+                onSelect={() => setFormat(EVideoOutputFormat.MOV)}
               />
             </div>
           </div>
@@ -453,11 +459,11 @@ export function EnhancerVideoView() {
             </div>
             <SegmentedControl
               value={style}
-              onChange={(id) => setStyle(id as typeof style)}
+              onChange={(id) => setStyle(id as EEnhancementStyle)}
               options={[
-                { id: 'natural', label: t('style_natural') },
-                { id: 'cinematic', label: t('style_cinematic') },
-                { id: 'social', label: t('style_social') },
+                { id: EEnhancementStyle.NATURAL, label: t('style_natural') },
+                { id: EEnhancementStyle.CINEMATIC, label: t('style_cinematic') },
+                { id: EEnhancementStyle.SOCIAL, label: t('style_social') },
               ]}
             />
           </div>

@@ -1,8 +1,8 @@
 import type { BillingPaymentAttemptWebhookEvent } from '@clerk/backend';
 import { db } from '@/libs/core/DB';
 import { applyPaidPaymentAttemptCreditsIfNeeded } from '@/libs/persistence/billing/applyPaidPaymentAttemptCreditsIfNeeded';
-import { applyReferralSubscriptionBonusFromPaymentAttempt } from '@/libs/persistence/users/applyReferralSubscriptionBonusFromPaymentAttempt';
 import { clerkUnixToDate } from '@/libs/persistence/billing/clerkBillingDates';
+import { applyReferralSubscriptionBonusFromPaymentAttempt } from '@/libs/persistence/users/applyReferralSubscriptionBonusFromPaymentAttempt';
 import { paymentAttempts } from '@/models/Schema';
 
 type PaymentData = BillingPaymentAttemptWebhookEvent['data'];

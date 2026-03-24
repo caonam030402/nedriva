@@ -11,6 +11,8 @@ export const MAX_LIST_LIMIT = 100;
 
 /**
  * Parse 1-based page from a search param (invalid → `defaultPage`, min 1).
+ * @param raw
+ * @param defaultPage
  */
 export function parsePageParam(raw: string | null, defaultPage: number = 1): number {
   if (raw == null || raw === '') {
@@ -25,6 +27,8 @@ export function parsePageParam(raw: string | null, defaultPage: number = 1): num
 
 /**
  * Parse limit from URL (same rules as API `parseLimitParam`).
+ * @param raw
+ * @param fallback
  */
 export function parseListLimitParam(raw: string | null, fallback: number): number {
   if (raw == null || raw === '') {
@@ -37,7 +41,11 @@ export function parseListLimitParam(raw: string | null, fallback: number): numbe
   return Math.min(Math.max(1, n), MAX_LIST_LIMIT);
 }
 
-/** SQL `OFFSET` from 1-based page. */
+/**
+ * SQL `OFFSET` from 1-based page.
+ * @param page
+ * @param limit
+ */
 export function offsetFromPageAndLimit(page: number, limit: number): number {
   const p = Math.max(1, page);
   const l = Math.max(1, limit);
@@ -68,6 +76,8 @@ export type ApplyPageLimitToSearchParamsOptions = {
 
 /**
  * Mutates `URLSearchParams`: set or delete `page` / `limit` vs defaults (cleaner URLs).
+ * @param sp
+ * @param options
  */
 export function applyPageLimitToSearchParams(
   sp: URLSearchParams,
@@ -92,6 +102,9 @@ export function applyPageLimitToSearchParams(
 
 /**
  * Build path + query for `router.push` / `router.replace` (preserves unrelated params).
+ * @param pathname
+ * @param currentSearch
+ * @param options
  */
 export function pathnameWithPageLimitQuery(
   pathname: string,

@@ -2,40 +2,47 @@ import type { Appearance } from '@clerk/types';
 import { dark } from '@clerk/themes';
 
 /**
- * Neutral dark surfaces for Clerk only — avoids purple-tinted navy (`#120f1e` / `#1c1830`)
- * that reads as “violet background” on checkout & modals.
+ * Tokens mirror design tokens in `src/styles/global.css` (`@theme` block and `:root`).
+ * Keep hex values in sync when the design system changes.
  */
-const BG = '#101012';
-const SURFACE = '#161618';
-const INPUT = '#1c1c1f';
+const PAGE = '#000000';
+const ELEVATED = '#141414';
+const INPUT_BG = '#2d333f';
 const BORDER_SUBTLE = '1px solid rgba(255,255,255,0.08)';
-const BORDER_INPUT = '1px solid rgba(255,255,255,0.12)';
+const BORDER_INPUT = '1px solid rgba(255,255,255,0.1)';
+const BORDER_CARD = '1px solid rgba(232, 197, 71, 0.14)';
+const BRAND = '#e8c547';
+const BRAND_HOVER = '#f5d978';
+const TEXT = '#ffffff';
+const TEXT_SECONDARY = '#a3a3a3';
+const TEXT_SUBTLE = '#737373';
+const INVERSE = '#0a0a0a';
+const SHADOW_CARD = '0 8px 32px rgb(0 0 0 / 0.55)';
+const SHADOW_CTA = '0 4px 28px rgb(232 197 71 / 0.45)';
 /**
  * PricingTable feature checkmarks — `color` drives `stroke="currentColor"` on Clerk’s SVGs.
  * Do **not** set `fill: currentColor` here: those icons are stroke-based; forcing fill warps the path into solid wedges.
  */
 const FEATURE_CHECK_SVG = {
-  color: '#a78bfa',
+  color: BRAND,
 } as const;
 
 export const clerkAppearance: Appearance = {
   baseTheme: dark,
-  cssLayerName: 'clerk',
+  /** Omit `cssLayerName`: HeroUI re-imports Tailwind layers and can break layered Clerk CSS on auth pages. */
 
   variables: {
-    colorPrimary: '#8b5cf6',
-    /** Modal/drawer scrim — neutral, not derived from purple `colorNeutral`. */
+    colorPrimary: BRAND,
     colorModalBackdrop: '#030308',
-    colorBackground: BG,
-    colorInputBackground: INPUT,
-    colorInputText: '#ffffff',
-    colorText: '#ffffff',
-    colorTextSecondary: '#a1a1b5',
+    colorBackground: PAGE,
+    colorInputBackground: INPUT_BG,
+    colorInputText: TEXT,
+    colorText: TEXT,
+    colorTextSecondary: TEXT_SECONDARY,
     colorDanger: '#ef4444',
     colorSuccess: '#22c55e',
-    colorTextOnPrimaryBackground: '#ffffff',
-    /** Muted fills / hovers inside Clerk — neutral zinc, not blue-violet. */
-    colorNeutral: SURFACE,
+    colorTextOnPrimaryBackground: INVERSE,
+    colorNeutral: ELEVATED,
     fontFamily: 'inherit',
     fontSize: '0.9375rem',
     borderRadius: '0.75rem',
@@ -43,90 +50,102 @@ export const clerkAppearance: Appearance = {
   },
 
   elements: {
-    /* ── Card shell ─────────────────────────────── */
+    rootBox: {
+      width: '100%',
+    },
+
+    /* ── Card shell (elevated panel on pure black page) ─ */
     card: {
-      background: BG,
-      border: BORDER_SUBTLE,
-      boxShadow: '0 4px 32px rgba(0,0,0,0.55)',
+      background: ELEVATED,
+      border: BORDER_CARD,
+      boxShadow: SHADOW_CARD,
       borderRadius: '1rem',
       padding: '2rem',
     },
 
-    /* ── Header ─────────────────────────────────── */
-    headerTitle: { color: '#ffffff', fontWeight: '700' },
-    headerSubtitle: { color: '#a1a1b5' },
+    headerTitle: { color: TEXT, fontWeight: '700' },
+    headerSubtitle: { color: TEXT_SECONDARY },
 
-    /* ── Social OAuth buttons ───────────────────── */
     socialButtonsBlockButton: {
-      background: INPUT,
+      background: INPUT_BG,
       border: BORDER_INPUT,
-      color: '#ffffff',
-      transition: 'all 0.2s ease',
+      color: TEXT,
+      borderRadius: '0.625rem',
+      transition: 'border-color 0.2s ease, background-color 0.2s ease',
+      '&:hover': {
+        background: '#343b4a',
+        borderColor: 'rgba(232, 197, 71, 0.22)',
+      },
     },
-    socialButtonsBlockButtonText: { color: '#ffffff', fontWeight: '500' },
+    socialButtonsBlockButtonText: { color: TEXT, fontWeight: '500' },
 
-    /* ── Divider ────────────────────────────────── */
     dividerLine: { background: 'rgba(255,255,255,0.08)' },
-    dividerText: { color: '#6b6b80' },
+    dividerText: { color: TEXT_SUBTLE },
 
-    /* ── Form fields ────────────────────────────── */
-    formFieldLabel: { color: '#a1a1b5', fontWeight: '500' },
+    formFieldLabel: { color: TEXT_SECONDARY, fontWeight: '500' },
     formFieldInput: {
-      background: INPUT,
+      background: INPUT_BG,
       border: BORDER_INPUT,
-      color: '#ffffff',
+      color: TEXT,
       borderRadius: '0.625rem',
       transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+      '&:focus': {
+        borderColor: 'rgba(232, 197, 71, 0.45)',
+        boxShadow: '0 0 0 2px rgba(232, 197, 71, 0.2)',
+      },
     },
-    formFieldInputShowPasswordButton: { color: '#6b6b80' },
+    formFieldInputShowPasswordButton: { color: TEXT_SUBTLE },
 
-    /* ── Primary submit (sign-in + Billing) */
     formButtonPrimary: {
-      background: '#7c3aed',
-      color: '#ffffff',
+      background: BRAND,
+      color: INVERSE,
       border: 'none',
-      boxShadow: '0 2px 14px rgba(124, 58, 237, 0.35)',
+      borderRadius: '9999px',
+      minHeight: '2.75rem',
+      boxShadow: SHADOW_CTA,
       fontWeight: '600',
-      letterSpacing: '0.01em',
+      letterSpacing: '0.02em',
       transition: 'background-color 0.2s ease, box-shadow 0.2s ease',
       '&:hover': {
-        background: '#6d28d9',
-        boxShadow: '0 4px 18px rgba(124, 58, 237, 0.42)',
+        background: BRAND_HOVER,
+        boxShadow: '0 6px 32px rgb(232 197 71 / 0.5)',
       },
     },
 
-    /* ── Links ──────────────────────────────────── */
-    footerActionText: { color: '#6b6b80' },
+    footerActionText: { color: TEXT_SUBTLE },
     footerActionLink: {
-      color: '#a78bfa',
-      fontWeight: '500',
+      color: BRAND_HOVER,
+      fontWeight: '600',
     },
     footer: {
-      background: 'rgba(10, 10, 12, 0.92)',
-      borderTop: '1px solid rgba(255,255,255,0.06)',
+      background: `linear-gradient(180deg, rgba(20,20,20,0.98) 0%, rgba(0,0,0,0.96) 100%),
+        repeating-linear-gradient(
+          -18deg,
+          transparent,
+          transparent 5px,
+          rgba(232, 197, 71, 0.03) 5px,
+          rgba(232, 197, 71, 0.03) 6px
+        )`,
+      borderTop: '1px solid rgba(232, 197, 71, 0.1)',
       borderRadius: '0 0 1rem 1rem',
     },
 
-    /* ── Identity preview (after email step) ────── */
-    identityPreviewText: { color: '#ffffff' },
-    identityPreviewEditButton: { color: '#a78bfa' },
+    identityPreviewText: { color: TEXT },
+    identityPreviewEditButton: { color: BRAND_HOVER },
 
-    /* ── Alert / error box ──────────────────────── */
     alertText: { color: '#fca5a5' },
     formFieldErrorText: { color: '#fca5a5' },
 
-    /* ── Checkbox ───────────────────────────────── */
-    checkbox: { accentColor: '#8b5cf6' },
+    checkbox: { accentColor: BRAND },
 
-    /* ── Internal nav (multi-step) ──────────────── */
-    navbar: { background: BG },
-    navbarButton: { color: '#a1a1b5' },
-    navbarButtonActive: { color: '#a78bfa' },
+    navbar: { background: ELEVATED },
+    navbarButton: { color: TEXT_SECONDARY },
+    navbarButtonActive: { color: BRAND_HOVER },
 
     /* ── Clerk Billing ─────────────────────────── */
     pricingTable: { color: '#e4e4e7' },
     pricingTableCard: {
-      background: BG,
+      background: ELEVATED,
       border: BORDER_SUBTLE,
       color: '#f4f4f5',
     },
@@ -177,13 +196,13 @@ export const clerkAppearance: Appearance = {
       '& svg': FEATURE_CHECK_SVG,
     },
     pricingTableCardFooterButton: {
-      background: '#7c3aed',
-      color: '#ffffff',
+      background: BRAND,
+      color: INVERSE,
       border: 'none',
-      boxShadow: '0 2px 12px rgba(124, 58, 237, 0.3)',
+      boxShadow: SHADOW_CTA,
       fontWeight: '600',
       '&:hover': {
-        background: '#6d28d9',
+        background: BRAND_HOVER,
       },
     },
 
@@ -226,7 +245,7 @@ export const clerkAppearance: Appearance = {
       zIndex: 10001,
     },
     drawerContent: {
-      background: BG,
+      background: ELEVATED,
       color: '#f4f4f5',
       zIndex: 10001,
     },
@@ -272,12 +291,12 @@ export const clerkAppearance: Appearance = {
 
     checkoutFormLineItemsRoot: {
       color: '#e4e4e7',
-      background: SURFACE,
+      background: ELEVATED,
       borderRadius: '1rem',
     },
     checkoutFormElementsRoot: {
       color: '#e4e4e7',
-      background: SURFACE,
+      background: ELEVATED,
       borderRadius: '1rem',
     },
     checkoutSuccessTitle: { color: '#ffffff' },
@@ -296,7 +315,7 @@ export const clerkAppearance: Appearance = {
     paymentAttemptFooterValue: { color: '#ffffff' },
 
     paymentMethodRow: {
-      background: SURFACE,
+      background: ELEVATED,
       border: BORDER_SUBTLE,
     },
     paymentMethodRowText: { color: '#f4f4f5' },
@@ -304,7 +323,7 @@ export const clerkAppearance: Appearance = {
     paymentMethodRowValue: { color: '#e4e4e7' },
 
     popoverBox: {
-      background: SURFACE,
+      background: ELEVATED,
       color: '#f4f4f5',
       border: BORDER_INPUT,
       boxShadow: '0 8px 32px rgba(0,0,0,0.5)',

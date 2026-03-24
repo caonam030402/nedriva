@@ -39,3 +39,11 @@ export enum EQueueStatus {
   Done = 'done',
   Error = 'error',
 }
+
+/** Backend DB status for image enhancer — aligns with `enhancerJobStatusEnum` in Schema */
+export enum EEnhancerStatus {
+  QUEUED = 'queued',
+  PROCESSING = 'processing',
+  DONE = 'done',
+  ERROR = 'error',
+}

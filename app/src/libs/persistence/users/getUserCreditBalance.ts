@@ -4,6 +4,7 @@ import { users } from '@/models/Schema';
 
 /**
  * Read `credit_balance` from `users` for a Clerk `userId`.
+ * @param userId
  * @returns `0` if no row exists.
  */
 export async function getUserCreditBalance(userId: string): Promise<number> {

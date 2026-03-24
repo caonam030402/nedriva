@@ -77,6 +77,17 @@ export default antfu(
       'jsdoc/require-jsdoc': 'off', // JSDoc comments are optional
       'jsdoc/require-returns': 'off', // Return types are optional
       'jsdoc/require-hyphen-before-param-description': 'error', // Enforce hyphen before param description
+
+      // --- Import Rules ---
+      // Disallow dynamic require/import inside functions (use top-level imports instead)
+      '@typescript-eslint/no-require-imports': 'error',
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'CallExpression[callee.type="Import"][arguments.length>0]',
+          message: 'Do not use dynamic import() inside functions. Use top-level imports instead.',
+        },
+      ],
     },
   },
   // After all Antfu + plugins: disable ESLint rules that conflict with Prettier (JS/TS/CSS…)

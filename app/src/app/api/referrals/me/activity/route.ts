@@ -4,8 +4,11 @@
 import { auth } from '@clerk/nextjs/server';
 import { and, desc, eq, isNotNull } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
-import { computeReferralSubscriptionBonusUsd } from '@/constants/billingPricing';
-import { referralCreditsPerPersonForEmail, REFERRAL_SUBSCRIPTION_BONUS_PERCENT } from '@/constants/referral';
+import { computeReferralSubscriptionBonusUsd } from '@/constants/billing/billingPricing';
+import {
+  REFERRAL_SUBSCRIPTION_BONUS_PERCENT,
+  referralCreditsPerPersonForEmail,
+} from '@/constants/referral';
 import { db } from '@/libs/core/DB';
 import { ensureAppUserFromCurrentClerkUser } from '@/libs/persistence/users/syncClerkAppUser';
 import { referralSubscriptionBonuses, users } from '@/models/Schema';
@@ -36,7 +39,7 @@ export async function GET() {
     .where(and(eq(users.referredByUserId, userId), isNotNull(users.referralBonusAppliedAt)))
     .orderBy(desc(users.referralBonusAppliedAt));
 
-  const creditGrants = inviteeRows.map(row => ({
+  const creditGrants = inviteeRows.map((row) => ({
     id: row.id,
     email: row.email ?? '',
     grantedAt: row.referralBonusAppliedAt!.toISOString(),
@@ -57,7 +60,7 @@ export async function GET() {
     .where(eq(referralSubscriptionBonuses.referrerUserId, userId))
     .orderBy(desc(referralSubscriptionBonuses.createdAt));
 
-  const paidBonuses = bonusRows.map(row => {
+  const paidBonuses = bonusRows.map((row) => {
     const basisUsd = toUsdNumber(row.inviteePaidTotalUsd);
     let bonusUsd = 0;
     if (basisUsd != null) {

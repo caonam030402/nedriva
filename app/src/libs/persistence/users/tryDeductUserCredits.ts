@@ -4,6 +4,8 @@ import { users } from '@/models/Schema';
 
 /**
  * Atomically subtract credits if balance is sufficient.
+ * @param userId
+ * @param amount
  * @returns new balance, or `null` if user missing or insufficient credits
  */
 export async function tryDeductUserCredits(

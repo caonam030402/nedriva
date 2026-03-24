@@ -2,7 +2,11 @@ import { eq, sql } from 'drizzle-orm';
 import { db } from '@/libs/core/DB';
 import { users } from '@/models/Schema';
 
-/** Add credits back (e.g. after a failed submit post-deduction). */
+/**
+ * Add credits back (e.g. after a failed submit post-deduction).
+ * @param userId
+ * @param amount
+ */
 export async function refundUserCredits(userId: string, amount: number): Promise<void> {
   if (amount <= 0) {
     return;

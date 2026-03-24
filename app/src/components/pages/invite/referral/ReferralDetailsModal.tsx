@@ -74,7 +74,7 @@ export function ReferralDetailsModal(props: ReferralDetailsModalProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(apiRoutes.referralsMeActivity, { credentials: 'include' });
+      const res = await fetch(apiRoutes.referrals.activity, { credentials: 'include' });
       if (!res.ok) {
         throw new Error(String(res.status));
       }
@@ -129,13 +129,13 @@ export function ReferralDetailsModal(props: ReferralDetailsModalProps) {
                     {/* CSS-only selected state — avoids TabIndicator / SharedElement layout glitches */}
                     <Tab
                       id="credit"
-                      className="min-h-10 min-w-0 flex-1 rounded-lg px-3 py-2.5 text-center text-sm font-semibold text-muted/90 transition-colors outline-none hover:text-foreground/90 data-[selected]:bg-violet-600/45 data-[selected]:text-white data-[selected]:shadow-[inset_0_0_0_1px_rgba(167,139,250,0.55)]"
+                      className="min-h-10 min-w-0 flex-1 rounded-lg px-3 py-2.5 text-center text-sm font-semibold text-muted/90 transition-colors outline-none hover:text-foreground/90 data-[selected]:bg-brand/40 data-[selected]:text-inverse data-[selected]:shadow-[inset_0_0_0_1px_rgba(232,197,71,0.5)]"
                     >
                       {copy.tabCredit}
                     </Tab>
                     <Tab
                       id="paid"
-                      className="min-h-10 min-w-0 flex-1 rounded-lg px-3 py-2.5 text-center text-sm font-semibold text-muted/90 transition-colors outline-none hover:text-foreground/90 data-[selected]:bg-violet-600/45 data-[selected]:text-white data-[selected]:shadow-[inset_0_0_0_1px_rgba(167,139,250,0.55)]"
+                      className="min-h-10 min-w-0 flex-1 rounded-lg px-3 py-2.5 text-center text-sm font-semibold text-muted/90 transition-colors outline-none hover:text-foreground/90 data-[selected]:bg-brand/40 data-[selected]:text-inverse data-[selected]:shadow-[inset_0_0_0_1px_rgba(232,197,71,0.5)]"
                     >
                       {copy.tabPaid}
                     </Tab>

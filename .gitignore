@@ -13,3 +13,5 @@ worker/.env.*
 !worker/.env.example
 
 .DS_Store
+.gitnexus
+rembg-main

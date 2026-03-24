@@ -83,13 +83,13 @@ Add this block **after** `@import '@heroui/styles'`:
 
 ```css
 :root {
-  /* Map HeroUI primary → app brand violet */
+  /* Map HeroUI primary → app brand (gold) */
   --heroui-primary:      theme(colors.brand);      /* = var(--color-brand) */
   --heroui-primary-200:  theme(colors.brand-light);
   --heroui-primary-700:  theme(colors.brand-dim);
 
   /* Backgrounds */
-  --heroui-background:   theme(colors.base);       /* = var(--color-base) */
+  --heroui-background:   theme(colors.page);       /* = var(--color-page) */
   --heroui-content1:     theme(colors.surface);
   --heroui-content2:     theme(colors.elevated);
 

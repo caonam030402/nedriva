@@ -28,7 +28,7 @@ export const Badge = (props: BadgeProps) => {
 
   return (
     <span
-      className={`inline-flex items-center gap-2 rounded-pill border bg-opacity-60 px-4 py-1.5 text-sm font-medium backdrop-blur-sm ${s.border} ${s.bg} ${s.text} ${props.className ?? ''}`}
+      className={`bg-opacity-60 inline-flex items-center gap-2 rounded-pill border px-4 py-1.5 text-sm font-medium backdrop-blur-sm ${s.border} ${s.bg} ${s.text} ${props.className ?? ''}`}
     >
       {props.pulse && (
         <span

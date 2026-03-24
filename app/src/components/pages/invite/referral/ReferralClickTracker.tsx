@@ -13,6 +13,7 @@ type Props = {
 /**
  * Fire once per tab (sessionStorage) when `?ref=` is present to count a click for the referrer.
  * Skip when signed in — account holders opening the link are not new prospects.
+ * @param props
  */
 export function ReferralClickTracker(props: Props) {
   const { refCode } = props;
@@ -37,7 +38,7 @@ export function ReferralClickTracker(props: Props) {
 
     void (async () => {
       try {
-        const res = await fetch(apiRoutes.referralsTrackClick, {
+        const res = await fetch(apiRoutes.referrals.trackClick, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code }),

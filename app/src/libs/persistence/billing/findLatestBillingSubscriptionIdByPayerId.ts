@@ -5,6 +5,7 @@ import { subscriptions } from '@/models/Schema';
 /**
  * Resolves parent subscription when `subscriptionItem.*` payloads omit `subscription_id`.
  * Uses the most recently updated row for this Clerk `payer_id` (one active sub per payer is typical).
+ * @param payerId
  */
 export async function findLatestBillingSubscriptionIdByPayerId(
   payerId: string | null | undefined,

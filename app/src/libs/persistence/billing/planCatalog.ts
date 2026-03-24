@@ -1,15 +1,19 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { SubscriptionCapabilities } from '@/constants/billingPlanBenefits';
+import type { SubscriptionCapabilities } from '@/constants/billing/billingPlanBenefits';
 import type * as schema from '@/models/Schema';
 import { and, eq, inArray } from 'drizzle-orm';
-import { subscriptionFeatureFlagsFromCatalogIds } from '@/constants/billingCatalogFeatures';
+import { subscriptionFeatureFlagsFromCatalogIds } from '@/constants/billing/billingCatalogFeatures';
 import {
   FREE_SUBSCRIPTION_CAPABILITIES,
   mergeCapabilities,
   resolveBillingPlanSlug,
   slugCandidatesForBillingLookup,
-} from '@/constants/billingPlanBenefits';
-import { isOrgCatalogSlug, isUserCatalogSlug, PlanPayerType } from '@/constants/clerkPlanKeys';
+} from '@/constants/billing/billingPlanBenefits';
+import {
+  isOrgCatalogSlug,
+  isUserCatalogSlug,
+  PlanPayerType,
+} from '@/constants/clerk/clerkPlanKeys';
 import { planBenefits, planFeatures, plans } from '@/models/Schema';
 
 /** Works with both top-level `db` and `tx` inside `db.transaction(...)`. */

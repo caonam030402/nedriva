@@ -272,7 +272,7 @@ export const TestimonialsSection = () => {
 
           <motion.h2
             variants={headerItem}
-            className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl"
+            className="font-display text-4xl font-semibold tracking-tight text-foreground sm:text-5xl"
           >
             {t('headline')}
             {' '}

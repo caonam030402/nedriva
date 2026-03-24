@@ -17,6 +17,8 @@ export const Routes = {
   about: '/about',
   /** Referral / partner landing (public). */
   affiliateProgram: '/affiliate-program',
+  /** AI video upscaler marketing landing (public). */
+  videoEnhancer: '/video-enhancer',
   /** @deprecated Use `affiliateProgram` — kept for grep; route redirects. */
   affiliate: '/affiliate-program',
   changelog: '/changelog',
@@ -43,6 +45,11 @@ export const Routes = {
     faceEnhancer: '/tools/face-enhancer',
   },
 
+  /* Dedicated marketing landing pages */
+  bgRemover: '/background-remover',
+  /** @deprecated Use `tools.bgRemover` — kept for existing references. */
+  videoEnhancer: '/video-enhancer', // overridden by line 21; same value
+
   /* API docs */
   apiBusiness: '/api-business',
 
@@ -58,6 +65,7 @@ export const Routes = {
     chat: '/boost/chat',
     video: '/boost/video',
     upscale: '/boost/upscale',
+    bgRemover: '/boost/background-remover',
 
     /* Account & billing */
     invite: '/boost/invite',
@@ -82,6 +90,7 @@ export const PRIVATE_ROUTES = [
   Routes.dashboard.chat,
   Routes.dashboard.video,
   Routes.dashboard.upscale,
+  Routes.dashboard.bgRemover,
   Routes.dashboard.invite,
   Routes.dashboard.userProfile,
   Routes.dashboard.history,
@@ -91,7 +100,7 @@ export const PRIVATE_ROUTES = [
  * Clerk `createRouteMatcher` patterns derived from PRIVATE_ROUTES.
  * Each route gets a `(.*)` wildcard + a `/:locale` prefixed variant for i18n.
  *
- * Usage (in src/proxy.ts):
+ * Usage (in `src/proxy.ts`, re-exported from `src/middleware.ts`):
  *   import { PRIVATE_ROUTE_PATTERNS } from '@/utils/Routes';
  *   const isProtectedRoute = createRouteMatcher(PRIVATE_ROUTE_PATTERNS);
  */

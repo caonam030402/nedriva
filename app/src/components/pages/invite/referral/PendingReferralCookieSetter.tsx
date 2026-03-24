@@ -5,17 +5,12 @@ import {
   PENDING_REFERRAL_COOKIE,
   PENDING_REFERRAL_COOKIE_MAX_AGE_DAYS,
 } from '@/constants/referral';
-
-function normalizeRefCode(raw: string): string | null {
-  const t = raw.trim().toLowerCase().replaceAll(/[^a-z0-9]/g, '');
-  if (t.length < 4 || t.length > 16) {
-    return null;
-  }
-  return t;
-}
+import { normalizeRefCode } from '@/utils/referralLink';
 
 /**
  * Persist `ref` from the URL in a cookie (30 days) so the server can apply it after sign-up / sign-in.
+ * @param props
+ * @param props.refCode
  */
 export function PendingReferralCookieSetter(props: { refCode: string | null }) {
   useEffect(() => {

@@ -80,7 +80,7 @@ export function ReferralPaidBonusesTable(props: ReferralPaidBonusesTableProps) {
                     labels.basisUnknown
                   )}
                 </TableCell>
-                <TableCell className="text-end font-medium text-violet-200 tabular-nums">
+                <TableCell className="text-end font-medium text-brand-light tabular-nums">
                   {bonusPercent}%
                 </TableCell>
                 <TableCell className="text-sm whitespace-nowrap text-foreground/90">

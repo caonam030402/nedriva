@@ -22,13 +22,16 @@ import {
   isBillingPaymentAttemptWebhookType,
   isBillingSubscriptionItemWebhookType,
   isBillingSubscriptionWebhookType,
-} from '@/constants/clerkBillingWebhookEvents';
-import { ClerkUserWebhookEvent } from '@/constants/clerkUserWebhookEvents';
+} from '@/constants/clerk/clerkBillingWebhookEvents';
+import { ClerkUserWebhookEvent } from '@/constants/clerk/clerkUserWebhookEvents';
 import { logger } from '@/libs/core/Logger';
 import { upsertBillingPaymentAttemptFromWebhook } from '@/libs/persistence/billing/upsertBillingPaymentAttemptFromWebhook';
 import { upsertBillingSubscriptionFromWebhook } from '@/libs/persistence/billing/upsertBillingSubscriptionFromWebhook';
 import { upsertBillingSubscriptionItemFromWebhook } from '@/libs/persistence/billing/upsertBillingSubscriptionItemFromWebhook';
-import { softDeleteAppUser, upsertAppUserFromClerkUserJson } from '@/libs/persistence/users/syncClerkAppUser';
+import {
+  softDeleteAppUser,
+  upsertAppUserFromClerkUserJson,
+} from '@/libs/persistence/users/syncClerkAppUser';
 
 function errMsg(error: unknown): string {
   return error instanceof Error ? error.message : String(error);

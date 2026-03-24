@@ -139,14 +139,14 @@ export const ValuePropSection = async () => {
   ];
 
   return (
-    <section className="bg-surface py-20 sm:py-28">
+    <section className="relative overflow-hidden bg-surface py-20 sm:py-28">
 
       {/* Subtle radial gradient backdrop */}
       <div
-        className="pointer-events-none absolute inset-x-0 -mt-28 h-96 opacity-20"
+        className="pointer-events-none absolute inset-x-0 -mt-28 h-96 opacity-25"
         style={{
           background:
-            'radial-gradient(ellipse at 50% 100%, rgba(139,92,246,0.5) 0%, transparent 70%)',
+            'radial-gradient(ellipse at 50% 100%, rgba(232, 197, 71, 0.22) 0%, transparent 70%)',
         }}
       />
 
@@ -154,10 +154,10 @@ export const ValuePropSection = async () => {
 
         {/* ── Header ── */}
         <div className="mx-auto mb-14 max-w-3xl text-center">
-          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/15 px-4 py-1.5 text-sm font-medium text-violet-300">
+          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/15 px-4 py-1.5 text-sm font-medium text-brand-light">
             {t('eyebrow_badge')}
           </span>
-          <h2 className="text-4xl leading-tight font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
+          <h2 className="font-display text-4xl leading-tight font-semibold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
             {t('headline')}
             <br />
             <span
@@ -187,7 +187,7 @@ export const ValuePropSection = async () => {
             <p className="w-28 text-center text-sm font-medium text-subtle">{t('compare_col_generic')}</p>
             <p
               className="w-28 text-center text-sm font-semibold text-brand-light"
-              style={{ textShadow: '0 0 12px rgba(139,92,246,0.6)' }}
+              style={{ textShadow: '0 0 14px rgba(232, 197, 71, 0.45)' }}
             >
               {t('compare_col_us')}
             </p>

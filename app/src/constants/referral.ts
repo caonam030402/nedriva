@@ -46,6 +46,7 @@ const CONSUMER_EMAIL_DOMAINS = new Set([
 
 /**
  * "Consumer" email (lower bonus). Missing email → treat as consumer (safe default).
+ * @param email
  */
 export function isConsumerEmailDomain(email: string | null | undefined): boolean {
   if (email == null) {

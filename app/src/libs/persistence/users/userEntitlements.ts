@@ -1,7 +1,7 @@
-import type { SubscriptionCapabilities } from '@/constants/billingPlanBenefits';
+import type { SubscriptionCapabilities } from '@/constants/billing/billingPlanBenefits';
 import type { UserSubscriptionCapabilitiesRow } from '@/models/Schema';
 import { eq } from 'drizzle-orm';
-import { FREE_SUBSCRIPTION_CAPABILITIES } from '@/constants/billingPlanBenefits';
+import { FREE_SUBSCRIPTION_CAPABILITIES } from '@/constants/billing/billingPlanBenefits';
 import { db } from '@/libs/core/DB';
 import { userSubscriptionCapabilities } from '@/models/Schema';
 
@@ -79,7 +79,9 @@ export async function userHasPlanFeatureFlag(
  * Feature flags that are `true` (for analytics / UI).
  * @param userId - Clerk `user_...` (same as `users.id`).
  */
-export async function listEnabledPlanFeatureFlags(userId: string): Promise<UserPlanFeatureFlagKey[]> {
+export async function listEnabledPlanFeatureFlags(
+  userId: string,
+): Promise<UserPlanFeatureFlagKey[]> {
   const [row] = await db
     .select()
     .from(userSubscriptionCapabilities)
@@ -88,5 +90,5 @@ export async function listEnabledPlanFeatureFlags(userId: string): Promise<UserP
   if (!row) {
     return [];
   }
-  return FEATURE_FLAG_KEYS.filter(k => row[k]);
+  return FEATURE_FLAG_KEYS.filter((k) => row[k]);
 }

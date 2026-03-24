@@ -2,6 +2,8 @@ import { AppConfig } from '@/utils/AppConfig';
 
 /**
  * Path with next-intl prefix (`as-needed` skips prefix for default locale).
+ * @param path
+ * @param locale
  */
 export function getLocalizedPath(path: string, locale: string) {
   const p = path.startsWith('/') ? path : `/${path}`;
@@ -13,6 +15,9 @@ export function getLocalizedPath(path: string, locale: string) {
 
 /**
  * Absolute URL for Clerk Billing `newSubscriptionRedirectUrl` (same tab after checkout).
+ * @param path
+ * @param locale
+ * @param origin
  */
 export function getPostCheckoutAbsoluteUrl(path: string, locale: string, origin: string | null) {
   const localized = getLocalizedPath(path, locale);

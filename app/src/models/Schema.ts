@@ -16,6 +16,89 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 
+/* ── pgEnum (all enums first) ─────────────────────────────────── */
+
+/** Aligns with Python worker + GET /api/jobs/{jobId} statuses */
+export const enhancerJobStatusEnum = pgEnum('enhancer_job_status', [
+  'queued',
+  'processing',
+  'done',
+  'error',
+]);
+
+/** Clerk `commerce_subscription` + `commerce_subscription_item` lifecycle (webhook payloads). */
+export const billingSubscriptionStatusEnum = pgEnum('billing_subscription_status', [
+  'abandoned',
+  'active',
+  'canceled',
+  'ended',
+  'expired',
+  'incomplete',
+  'past_due',
+  'upcoming',
+]);
+
+/** Clerk `paymentAttempt` status. */
+export const billingPaymentAttemptStatusEnum = pgEnum('billing_payment_attempt_status', [
+  'pending',
+  'paid',
+  'failed',
+]);
+
+/** Clerk payment attempt `charge_type`. */
+export const billingChargeTypeEnum = pgEnum('billing_charge_type', ['checkout', 'recurring']);
+
+/** Billing catalog: `user` = individual, `organization` = org (Clerk org billing). */
+export const planPayerTypeEnum = pgEnum('plan_payer_type', ['user', 'organization']);
+
+/** Background removal job lifecycle — Python worker + Next.js API */
+export const bgRemovalJobStatusEnum = pgEnum('bg_removal_job_status', [
+  'pending',
+  'processing',
+  'done',
+  'failed',
+]);
+
+export type BgRemovalJobStatus = (typeof bgRemovalJobStatusEnum.enumValues)[number];
+
+/* ── Video enhancement const enums (wire / JSON options) ─────── */
+
+/** Status of a single video enhancement job */
+export const EVideoJobStatus = {
+  QUEUED: 'queued',
+  PROCESSING: 'processing',
+  DONE: 'done',
+  FAILED: 'failed',
+} as const;
+export type TVideoJobStatus = (typeof EVideoJobStatus)[keyof typeof EVideoJobStatus];
+
+/** Upscale factor */
+export const EUpscaleFactor = {
+  AUTO: 'auto',
+  X2: '2x',
+  X4: '4x',
+} as const;
+export type TUpscaleFactor = (typeof EUpscaleFactor)[keyof typeof EUpscaleFactor];
+
+/** Enhancement style */
+export const EEnhancementStyle = {
+  CINEMATIC: 'cinematic',
+  SOCIAL: 'social',
+  NATURAL: 'natural',
+} as const;
+export type TEnhancementStyle = (typeof EEnhancementStyle)[keyof typeof EEnhancementStyle];
+
+/** JSON shape for `enhancement_jobs.options` */
+export type VideoEnhancementOptions = {
+  upscaleFactor: TUpscaleFactor;
+  denoise: boolean;
+  deblur: boolean;
+  faceEnhance: boolean;
+  style: TEnhancementStyle;
+};
+
+/* ── Tables ───────────────────────────────────────────────────── */
+
 /**
  * Mirrors Clerk users — synced via webhook (`user.*`) + lazy upsert on authenticated API calls.
  * `id` is Clerk user id (`user_...`).
@@ -100,52 +183,6 @@ export const referralSubscriptionBonuses = pgTable(
   },
   table => [index('referral_sub_bonus_referrer_idx').on(table.referrerUserId)],
 );
-
-// This file defines the structure of your database tables using the Drizzle ORM.
-
-// To modify the database schema:
-// 1. Update this file with your desired changes.
-// 2. Generate a new migration by running: `npm run db:generate`
-
-// The generated migration file will reflect your schema changes.
-// It automatically run the command `db-server:file`, which apply the migration before Next.js starts in development mode,
-// Alternatively, if your database is running, you can run `npm run db:migrate` and there is no need to restart the server.
-
-// Need a database for production? Check out https://www.prisma.io/?via=nextjsboilerplate
-// Tested and compatible with Next.js Boilerplate
-
-/** Aligns with Python worker + GET /api/v1/jobs/{job_id} statuses */
-export const enhancerJobStatusEnum = pgEnum('enhancer_job_status', [
-  'queued',
-  'processing',
-  'done',
-  'error',
-]);
-
-/** Clerk `commerce_subscription` + `commerce_subscription_item` lifecycle (webhook payloads). */
-export const billingSubscriptionStatusEnum = pgEnum('billing_subscription_status', [
-  'abandoned',
-  'active',
-  'canceled',
-  'ended',
-  'expired',
-  'incomplete',
-  'past_due',
-  'upcoming',
-]);
-
-/** Clerk `paymentAttempt` status. */
-export const billingPaymentAttemptStatusEnum = pgEnum('billing_payment_attempt_status', [
-  'pending',
-  'paid',
-  'failed',
-]);
-
-/** Clerk payment attempt `charge_type`. */
-export const billingChargeTypeEnum = pgEnum('billing_charge_type', ['checkout', 'recurring']);
-
-/** Billing catalog: `user` = individual, `organization` = org (Clerk org billing). */
-export const planPayerTypeEnum = pgEnum('plan_payer_type', ['user', 'organization']);
 
 /**
  * Plan from Clerk: internal uuid + `clerk_slug` + `payer_type` + `name` + recurring USD prices (synced from `BillingPlan`).
@@ -310,6 +347,108 @@ export const enhancerProcessedImages = pgTable(
   ],
 );
 
+export const bgRemovalJobs = pgTable(
+  'bg_removal_jobs',
+  {
+    id: varchar('id', { length: 32 }).primaryKey(),
+    userId: varchar('user_id', { length: 64 }).references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    inputKey: text('input_key').notNull(),
+    inputUrl: text('input_url').notNull(),
+    outputKey: text('output_key'),
+    outputUrl: text('output_url'),
+    creditCost: integer('credit_cost').notNull().default(1),
+    status: bgRemovalJobStatusEnum('status').notNull().default('pending'),
+    errorMessage: text('error_message'),
+    queuedAt: timestamp('queued_at', { withTimezone: true }),
+    processingStartedAt: timestamp('processing_started_at', { withTimezone: true }),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  t => [
+    index('bg_removal_jobs_user_id_idx').on(t.userId),
+    index('bg_removal_jobs_status_idx').on(t.status),
+    index('bg_removal_jobs_created_at_idx').on(t.createdAt),
+  ],
+);
+
+export const videos = pgTable(
+  'videos',
+  {
+    id: varchar('id', { length: 32 }).primaryKey(),
+    userId: varchar('user_id', { length: 64 }).references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    originalName: text('original_name').notNull(),
+    mimeType: varchar('mime_type', { length: 64 }).notNull(),
+    durationSecs: numeric('duration_secs', { precision: 10, scale: 3 }),
+    width: integer('width'),
+    height: integer('height'),
+    sizeBytes: numeric('size_bytes', { precision: 20 }),
+    fps: numeric('fps', { precision: 6, scale: 3 }),
+    inputUrl: text('input_url').notNull(),
+    inputUrlExpiresAt: timestamp('input_url_expires_at', { withTimezone: true }),
+    outputUrl: text('output_url'),
+    outputUrlExpiresAt: timestamp('output_url_expires_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  t => [index('videos_user_id_idx').on(t.userId), index('videos_created_at_idx').on(t.createdAt)],
+);
+
+export const enhancementJobs = pgTable(
+  'enhancement_jobs',
+  {
+    id: varchar('id', { length: 32 }).primaryKey(),
+    videoId: varchar('video_id', { length: 32 })
+      .notNull()
+      .references(() => videos.id, { onDelete: 'cascade' }),
+    userId: varchar('user_id', { length: 64 }).references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    options: jsonb('options').notNull().$type<VideoEnhancementOptions>(),
+    creditCost: integer('credit_cost').notNull().default(10),
+    status: varchar('status', { length: 20 }).notNull().default(EVideoJobStatus.QUEUED),
+    progress: integer('progress').notNull().default(0),
+    errorMessage: text('error_message'),
+    stageLabel: text('stage_label'),
+    resultUrl: text('result_url'),
+    resultUrlExpiresAt: timestamp('result_url_expires_at', { withTimezone: true }),
+    queuedAt: timestamp('queued_at', { withTimezone: true }),
+    processingStartedAt: timestamp('processing_started_at', { withTimezone: true }),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  t => [
+    index('enhancement_jobs_video_id_idx').on(t.videoId),
+    index('enhancement_jobs_user_id_idx').on(t.userId),
+    index('enhancement_jobs_status_idx').on(t.status),
+    index('enhancement_jobs_created_at_idx').on(t.createdAt),
+  ],
+);
+
+export const userVideoUsage = pgTable(
+  'user_video_usage',
+  {
+    id: varchar('id', { length: 32 }).primaryKey(),
+    userId: varchar('user_id', { length: 64 })
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    jobId: varchar('job_id', { length: 32 })
+      .notNull()
+      .references(() => enhancementJobs.id, { onDelete: 'cascade' }),
+    videoId: varchar('video_id', { length: 32 })
+      .notNull()
+      .references(() => videos.id, { onDelete: 'cascade' }),
+    creditsUsed: integer('credits_used').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  t => [
+    index('user_video_usage_user_id_idx').on(t.userId),
+    uniqueIndex('user_video_usage_job_id_idx').on(t.jobId),
+  ],
+);
+
 /**
  * Clerk Billing — `subscription.*` webhooks. `payload` is full `evt.data`; `items` mirrors `data.items`.
  */
@@ -402,7 +541,6 @@ export const paymentAttempts = pgTable(
     clerkUpdatedAt: timestamp('clerk_updated_at', { withTimezone: true, mode: 'date' }),
     paidAt: timestamp('paid_at', { withTimezone: true, mode: 'date' }),
     failedAt: timestamp('failed_at', { withTimezone: true, mode: 'date' }),
-    /** Set when credits (and optional ledger) were applied for this paid attempt — idempotency. */
     benefitsAppliedAt: timestamp('benefits_applied_at', { withTimezone: true, mode: 'date' }),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
       .defaultNow()
@@ -421,6 +559,8 @@ export const paymentAttempts = pgTable(
   ],
 );
 
+/* ── Row types ────────────────────────────────────────────────── */
+
 export type UserRow = typeof users.$inferSelect;
 export type NewUserRow = typeof users.$inferInsert;
 export type UserSubscriptionCapabilitiesRow = typeof userSubscriptionCapabilities.$inferSelect;
@@ -428,25 +568,33 @@ export type PlanRow = typeof plans.$inferSelect;
 export type PlanBenefitsRow = typeof planBenefits.$inferSelect;
 export type PlanCatalogFeatureRow = typeof planCatalogFeatures.$inferSelect;
 export type PlanFeatureLinkRow = typeof planFeatures.$inferSelect;
+export type PlanPayerType = (typeof planPayerTypeEnum.enumValues)[number];
+export type EnhancerProcessedImageRow = typeof enhancerProcessedImages.$inferSelect;
+export type NewEnhancerProcessedImageRow = typeof enhancerProcessedImages.$inferInsert;
+export type BgRemovalJob = typeof bgRemovalJobs.$inferSelect;
+export type NewBgRemovalJob = typeof bgRemovalJobs.$inferInsert;
+export type Video = typeof videos.$inferSelect;
+export type NewVideo = typeof videos.$inferInsert;
+export type EnhancementJob = typeof enhancementJobs.$inferSelect;
+export type NewEnhancementJob = typeof enhancementJobs.$inferInsert;
+export type UserVideoUsage = typeof userVideoUsage.$inferSelect;
+export type SubscriptionRow = typeof subscriptions.$inferSelect;
+export type SubscriptionItemRow = typeof subscriptionItems.$inferSelect;
+export type PaymentAttemptRow = typeof paymentAttempts.$inferSelect;
+
+export type BillingSubscriptionStatus = (typeof billingSubscriptionStatusEnum.enumValues)[number];
+export type BillingPaymentAttemptStatus = (typeof billingPaymentAttemptStatusEnum.enumValues)[number];
+export type BillingChargeType = (typeof billingChargeTypeEnum.enumValues)[number];
+
 /** @deprecated Prefer {@link PlanRow} */
 export type BillingPlanRow = PlanRow;
 /** @deprecated Prefer {@link PlanCatalogFeatureRow} */
 export type BillingFeatureRow = PlanCatalogFeatureRow;
 /** @deprecated Prefer {@link PlanFeatureLinkRow} */
 export type BillingPlanFeatureRow = PlanFeatureLinkRow;
-export type PlanPayerType = (typeof planPayerTypeEnum.enumValues)[number];
-export type EnhancerProcessedImageRow = typeof enhancerProcessedImages.$inferSelect;
-export type NewEnhancerProcessedImageRow = typeof enhancerProcessedImages.$inferInsert;
-export type SubscriptionRow = typeof subscriptions.$inferSelect;
-export type SubscriptionItemRow = typeof subscriptionItems.$inferSelect;
-export type PaymentAttemptRow = typeof paymentAttempts.$inferSelect;
 /** @deprecated Prefer {@link SubscriptionRow} */
 export type BillingSubscriptionRow = SubscriptionRow;
 /** @deprecated Prefer {@link SubscriptionItemRow} */
 export type BillingSubscriptionItemRow = SubscriptionItemRow;
 /** @deprecated Prefer {@link PaymentAttemptRow} */
 export type BillingPaymentAttemptRow = PaymentAttemptRow;
-
-export type BillingSubscriptionStatus = (typeof billingSubscriptionStatusEnum.enumValues)[number];
-export type BillingPaymentAttemptStatus = (typeof billingPaymentAttemptStatusEnum.enumValues)[number];
-export type BillingChargeType = (typeof billingChargeTypeEnum.enumValues)[number];

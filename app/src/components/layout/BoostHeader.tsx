@@ -2,13 +2,36 @@
 
 import { UserButton } from '@clerk/nextjs';
 import { useTranslations } from 'next-intl';
+import { BrandLogo } from '@/components/common/BrandLogo';
 import { LocaleSwitcher } from '@/components/common/LocaleSwitcher';
-import { useUserCreditBalanceQuery } from '@/hooks/react-query/queries/user/useUserCreditBalanceQuery';
+import { Chip } from '@/components/ui/Chip';
+import { useUserCreditBalanceQuery } from '@/hooks/react-query/user/queries/useUserCreditBalanceQuery';
 import { clerkUserButtonPopoverElements } from '@/libs/core/ClerkUserButtonAppearance';
 import { Link, usePathname } from '@/libs/i18n/I18nNavigation';
 import { Routes } from '@/utils/Routes';
 
-/* ── Tool nav items ──────────────────────────────────────────── */
+// ── Inline SVG icons (no external dep) ────────────────────────
+
+const InviteIcon = (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M7 8.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"
+    />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 14c0-2.485 2.462-4.5 5.5-4.5" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v4m-2-2h4" />
+  </svg>
+);
+
+const CreditIcon = (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.35} aria-hidden>
+    <ellipse cx="8" cy="8.5" rx="5" ry="3.25" />
+    <path strokeLinecap="round" d="M8 5.25v6.5" />
+  </svg>
+);
+
+// ── Toolbar nav items ──────────────────────────────────────────
 
 type ToolItem = {
   key: string;
@@ -25,36 +48,9 @@ const TOOLS: ToolItem[] = [
   { key: 'upscaler', labelKey: 'tool_upscaler', href: Routes.dashboard.upscale, isNew: true },
 ];
 
-/* ── Invite icon ─────────────────────────────────────────────── */
-
-const InviteIcon = () => (
-  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} className="size-3.5">
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M7 8.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"
-    />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 14c0-2.485 2.462-4.5 5.5-4.5" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v4m-2-2h4" />
-  </svg>
-);
-
-/* ── Credits icon ────────────────────────────────────────────── */
-
-const CreditIcon = () => (
-  <svg viewBox="0 0 16 16" fill="currentColor" className="size-3.5 text-warning">
-    <path
-      fillRule="evenodd"
-      d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8zm9 0a1 1 0 11-2 0 1 1 0 012 0zm-1-5.25a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3A.75.75 0 018 2.75z"
-      clipRule="evenodd"
-    />
-  </svg>
-);
-
-/* ── Component ───────────────────────────────────────────────── */
+// ── Header ─────────────────────────────────────────────────────
 
 type Props = {
-  /** Seed from RSC layout — React Query keeps balance fresh after enhance */
   initialCredits?: number;
 };
 
@@ -63,28 +59,29 @@ export const BoostHeader = (props: Props) => {
   const pathname = usePathname();
   const creditsQuery = useUserCreditBalanceQuery({ initialBalance: props.initialCredits });
   const credits = creditsQuery.data ?? props.initialCredits ?? 0;
+  const creditsDepleted = credits <= 0;
 
   return (
-    <header className="sticky top-0 z-60 border-b border-white/6">
-      {/* bg + blur on a child so header doesn't create a backdrop-filter stacking context */}
+    <header className="sticky top-0 z-50 shrink-0 border-b border-white/10 bg-black">
+      {/* Blueprint grid — aligned with `SiteHeader` */}
       <div
-        className="absolute inset-0 -z-10 backdrop-blur-md"
-        style={{ background: 'rgba(9,8,15,0.80)' }}
+        className="pointer-events-none absolute inset-0 z-0 opacity-[0.07]"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px)',
+          backgroundSize: '40px 40px',
+        }}
       />
-      <div className="mx-auto flex h-16 max-w-screen-2xl items-center gap-2 overflow-x-auto px-4 sm:gap-3 sm:px-6">
+      <div className="absolute inset-0 z-0 bg-linear-to-b from-black via-black to-black/95" />
+
+      <div className="relative z-10 mx-auto flex h-17 w-full max-w-screen-2xl items-center gap-2 px-4 sm:gap-3 sm:px-6 lg:px-8">
         {/* ── Logo ── */}
-        <Link href={Routes.dashboard.index} className="mr-3 flex shrink-0 items-center gap-2.5">
-          <div
-            className="flex size-8 items-center justify-center rounded-ui-sm"
-            style={{ background: 'var(--gradient-cta)' }}
-          >
-            <span className="text-sm font-bold text-white">P</span>
-          </div>
-          <span className="font-bold text-foreground">Nedriva</span>
+        <Link href={Routes.dashboard.index} className="mr-2 flex h-9 shrink-0 items-center sm:mr-3">
+          <BrandLogo className="leading-none" />
         </Link>
 
-        {/* ── Tool tabs ── */}
-        <nav className="flex items-center gap-0.5">
+        {/* ── Tool nav ── */}
+        <nav className="flex min-h-0 min-w-0 items-center gap-0.5 overflow-x-auto">
           {TOOLS.map((tool) => {
             const isActive =
               tool.href === Routes.dashboard.index
@@ -94,7 +91,7 @@ export const BoostHeader = (props: Props) => {
               <Link
                 key={tool.key}
                 href={tool.href}
-                className={`flex shrink-0 items-center gap-1.5 rounded-ui-sm px-3 py-2 text-sm font-medium transition-all duration-150 ${
+                className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-ui-sm px-3 py-1.5 text-sm font-medium transition-all duration-150 ${
                   isActive
                     ? 'bg-brand/15 text-brand-light'
                     : 'text-muted hover:bg-white/6 hover:text-foreground'
@@ -111,52 +108,51 @@ export const BoostHeader = (props: Props) => {
           })}
         </nav>
 
-        {/* ── Spacer ── */}
-        <div className="flex-1" />
+        {/* Spacer */}
+        <div className="min-w-0 flex-1" aria-hidden />
 
-        {/* ── Right controls ── */}
+        {/* ── Right actions ── */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-          {/* Invite friends */}
-          <Link
+          <Chip
+            variant="accent"
             href={Routes.dashboard.invite}
-            className="flex items-center gap-1.5 rounded-ui-sm border border-success/30 bg-success/10 px-3 py-1.5 text-xs font-semibold text-success transition-colors hover:border-success/50 hover:bg-success/20"
+            icon={InviteIcon}
+            iconClassName="text-emerald-400/85"
           >
-            <InviteIcon />
-            <span className="hidden sm:inline">{t('invite_friends')}</span>
-          </Link>
+            <span className="hidden whitespace-nowrap sm:inline">{t('invite_friends')}</span>
+          </Chip>
 
-          {/* Credits → public pricing (no login required) */}
-          <Link
+          <Chip
+            variant={creditsDepleted ? 'warning' : 'idle'}
             href={Routes.pricing}
-            className="flex items-center gap-1.5 rounded-ui-sm border border-warning/20 bg-warning/10 px-3 py-1.5 text-xs font-semibold text-warning transition-colors hover:border-warning/40"
+            icon={CreditIcon}
+            iconClassName={creditsDepleted ? 'text-amber-400/90' : 'text-zinc-500'}
+            className="whitespace-nowrap"
           >
-            <CreditIcon />
             {t('credits_left', { count: credits })}
-          </Link>
+          </Chip>
 
-          {/* Pricing plans */}
           <Link
             href={Routes.pricing}
-            className="hidden items-center rounded-ui-sm px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:text-foreground sm:flex"
+            className="hidden h-9 items-center justify-center rounded-ui-sm px-3 text-xs font-medium text-muted transition-colors hover:text-foreground sm:inline-flex"
           >
             {t('pricing_plans')}
           </Link>
 
-          {/* Divider */}
-          <div className="mx-0.5 h-5 w-px bg-white/10" />
+          <div className="mx-0.5 h-6 w-px shrink-0 self-center bg-white/10" aria-hidden />
 
-          {/* Locale switcher */}
           <LocaleSwitcher />
 
-          {/* Clerk UserButton */}
-          <UserButton
-            appearance={{
-              elements: {
-                ...clerkUserButtonPopoverElements,
-                avatarBox: 'size-7',
-              },
-            }}
-          />
+          <div className="flex h-9 shrink-0 items-center">
+            <UserButton
+              appearance={{
+                elements: {
+                  ...clerkUserButtonPopoverElements,
+                  avatarBox: 'size-8',
+                },
+              }}
+            />
+          </div>
         </div>
       </div>
     </header>

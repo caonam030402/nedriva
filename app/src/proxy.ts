@@ -37,10 +37,7 @@ const aj = arcjet.withRule(
   }),
 );
 
-export default async function proxy(
-  request: NextRequest,
-  event: NextFetchEvent,
-) {
+export default async function proxy(request: NextRequest, event: NextFetchEvent) {
   // Inbound webhooks (Clerk Svix, custom secrets) — must not be blocked by bot protection
   if (request.nextUrl.pathname.startsWith(API_WEBHOOKS_PREFIX)) {
     return NextResponse.next();

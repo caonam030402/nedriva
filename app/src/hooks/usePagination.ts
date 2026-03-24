@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 export type UsePaginationParams = {
   /** Items per page (must be >= 1). */
@@ -26,6 +26,7 @@ export type UsePaginationResult = {
 /**
  * Page state + range for page-based list APIs (`page` + `limit` query) and summaries.
  * Clamps `page` when `totalItems` shrinks.
+ * @param params
  */
 export function usePagination(params: UsePaginationParams): UsePaginationResult {
   const { pageSize, totalItems } = params;
@@ -33,12 +34,6 @@ export function usePagination(params: UsePaginationParams): UsePaginationResult 
   const [page, setPageState] = useState(1);
 
   const totalPages = Math.max(1, Math.ceil(totalItems / safeSize));
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPageState(totalPages);
-    }
-  }, [page, totalPages]);
 
   const setPage = useCallback(
     (next: number) => {
@@ -59,11 +54,11 @@ export function usePagination(params: UsePaginationParams): UsePaginationResult 
   }, [page, safeSize, totalItems]);
 
   const goToPrevious = useCallback(() => {
-    setPageState(p => Math.max(1, p - 1));
+    setPageState((p) => Math.max(1, p - 1));
   }, []);
 
   const goToNext = useCallback(() => {
-    setPageState(p => Math.min(totalPages, p + 1));
+    setPageState((p) => Math.min(totalPages, p + 1));
   }, [totalPages]);
 
   return {

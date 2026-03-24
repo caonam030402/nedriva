@@ -10,6 +10,7 @@ alwaysApply: false
 - **No copy-paste JSX** — if a pattern appears more than once, extract it into a component
 - **No inline components inside page files** — always create a separate file
 - **Check HeroUI first** — see `heroui-usage.mdc`. Only write custom components when HeroUI doesn't have it
+- **Marketing chrome** — landing CTAs, logo row, and catalog-style tags/media shells: use `CommonButton`, `BrandLogo`, `TagPill`, `MediaCard`, `SectionHeader` from `@/components/common` (see `ui-design-system.mdc`)
 - **Use Tailwind classes** from `@theme` tokens — avoid `style={{ }}` except for gradients and glow shadows
 
 ## Directory Structure
@@ -42,6 +43,29 @@ src/components/pages/
 - **Name folders by product area**, mirroring routes when it helps (`boost/...` for authenticated app, `marketing/` for public site blocks).
 - **Still shared?** If two unrelated routes need the same component, move it to `ui/`, `layout/`, or `image/` instead of duplicating under `pages/`.
 - **Colocate helpers** — hooks, constants, and small pure modules for that page can live next to the components (e.g. `useEnhancerUploadZone.ts`, `countEnhancerProcessingRows.ts`).
+
+---
+
+## Marketing primitives — `src/components/common/`
+
+### `CommonButton.tsx` — pill CTA (Artlist-style)
+- Variants: `primary` (gold `bg-brand`, `text-inverse`, `shadow-cta`), `secondary` (white fill, dark text), `outline`, `ghost`
+- Sizes: `sm` | `md` | `lg` — wrap with `<Link>` for navigation
+- Implementation wraps `@heroui/react/button` with preset classes; use **this** on landing/marketing pages instead of ad-hoc HeroUI styling
+
+### `BrandLogo.tsx`
+- Gold square mark + “Nedriva” wordmark; wrap with `<Link href="/">` in header/footer
+
+### `TagPill.tsx`
+- Uppercase micro labels (genres, categories): `border-white/12`, `text-subtle`, `rounded-ui-sm`
+
+### `MediaCard.tsx`
+- Props: `aspect` (`video` | `square` | `portrait` | `landscape`), optional `label`, `overlay`, `hoverLift`
+- Children should fill the frame (e.g. `next/image` with `fill`); content is absolutely positioned inside the aspect box
+
+### `SectionHeader.tsx`
+- Props: `badge`, `title`, `titleGradient`, `subtitle`, `align`, `action` (e.g. “View all” link), `titleGlow` (uses `text-glow-heading`)
+- Section titles use `font-display` for serif marketing look
 
 ---
 

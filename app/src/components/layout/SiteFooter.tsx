@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import { BrandLogo } from '@/components/common/BrandLogo';
 import { Link } from '@/libs/i18n/I18nNavigation';
 import { Routes } from '@/utils/Routes';
 
@@ -52,14 +53,8 @@ export const SiteFooter = async () => {
           <div className="col-span-2 sm:col-span-2 lg:col-span-1">
 
             {/* Logo */}
-            <Link href="/" className="inline-flex items-center gap-2.5">
-              <div
-                className="flex size-8 items-center justify-center rounded-ui-sm"
-                style={{ background: 'var(--gradient-cta)' }}
-              >
-                <span className="text-sm font-bold text-white">P</span>
-              </div>
-              <span className="font-bold text-foreground">Nedriva</span>
+            <Link href="/">
+              <BrandLogo />
             </Link>
 
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted">
@@ -100,7 +95,7 @@ export const SiteFooter = async () => {
 
           {/* Product column */}
           <div>
-            <p className="mb-4 text-xs font-bold uppercase tracking-widest text-subtle">
+            <p className="mb-4 text-xs font-bold tracking-widest text-subtle uppercase">
               {t('col_product')}
             </p>
             <ul className="space-y-2.5">
@@ -116,7 +111,7 @@ export const SiteFooter = async () => {
 
           {/* Company column */}
           <div>
-            <p className="mb-4 text-xs font-bold uppercase tracking-widest text-subtle">
+            <p className="mb-4 text-xs font-bold tracking-widest text-subtle uppercase">
               {t('col_company')}
             </p>
             <ul className="space-y-2.5">
@@ -130,7 +125,7 @@ export const SiteFooter = async () => {
 
           {/* Legal column */}
           <div>
-            <p className="mb-4 text-xs font-bold uppercase tracking-widest text-subtle">
+            <p className="mb-4 text-xs font-bold tracking-widest text-subtle uppercase">
               {t('col_legal')}
             </p>
             <ul className="space-y-2.5">

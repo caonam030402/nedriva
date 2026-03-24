@@ -1,6 +1,6 @@
 'use client';
 
-import type { QueueRowViewModel } from '../../../../libs/helpers/enhancer-image/queueRowViewModel';
+import type { QueueRowViewModel } from '@/helpers/enhancer-image/queueRowViewModel';
 import { AlertCircle, Check, Loader2, Maximize2, Sparkles, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -10,10 +10,10 @@ import {
   ENHANCER_QUEUE_GRID_CLASS,
   ENHANCER_QUEUE_ROW_GAP_CLASS,
   ENHANCER_QUEUE_STATUS_INNER_GAP_CLASS,
-} from '../../../../constants/enhancerImage';
+} from '../../../../constants/enhancer-image/enhancerImage';
 import { EnhancerOutputDownloadButton } from './EnhancerOutputDownloadButton';
 
-export type { QueueRowViewModel } from '../../../../libs/helpers/enhancer-image/queueRowViewModel';
+export type { QueueRowViewModel } from '../../../../helpers/enhancer-image/queueRowViewModel';
 
 type Props = {
   model: QueueRowViewModel;
@@ -92,7 +92,7 @@ export const QueueRow = (props: Props) => {
       )}
 
       {/* Name + badge — min-w-0 + overflow so long filenames ellipsis inside grid */}
-      <div className="min-w-0 max-w-full overflow-hidden">
+      <div className="max-w-full min-w-0 overflow-hidden">
         <p className="truncate text-xs font-medium text-foreground" title={model.fileName}>
           {model.fileName}
         </p>
@@ -114,7 +114,7 @@ export const QueueRow = (props: Props) => {
       </div>
 
       {/* Output — column `gap-x` handles gutter; clip long lines */}
-      <div className="min-w-0 max-w-full overflow-hidden text-xs">
+      <div className="max-w-full min-w-0 overflow-hidden text-xs">
         {outW && outH ? (
           <div className="space-y-0.5 break-words">
             {/* eslint-disable-next-line tailwindcss/classnames-order */}
@@ -142,7 +142,7 @@ export const QueueRow = (props: Props) => {
 
       {/* Status: fixed gap between badge column and icon column (not stretched `space-between`) */}
       <div
-        className={`grid min-w-0 w-full grid-cols-[minmax(0,1fr)_auto] items-center ${ENHANCER_QUEUE_STATUS_INNER_GAP_CLASS}`}
+        className={`grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center ${ENHANCER_QUEUE_STATUS_INNER_GAP_CLASS}`}
       >
         <div className="min-w-0">
           {model.status === EQueueStatus.Error ? (
@@ -151,28 +151,28 @@ export const QueueRow = (props: Props) => {
               title={model.error ?? 'Processing failed'}
             >
               <AlertCircle size={13} className="shrink-0 text-red-400" />
-              <span className="truncate text-[10px] font-medium normal-case text-red-200/90">
+              <span className="truncate text-[10px] font-medium text-red-200/90 normal-case">
                 {t('status_failed')}
               </span>
             </div>
           ) : model.status === EQueueStatus.Done ? (
             <div className="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-emerald-500/14 px-2 py-1">
               <Check size={12} className="shrink-0 text-emerald-400" strokeWidth={2.5} />
-              <span className="text-[10px] font-medium normal-case text-emerald-100/95">
+              <span className="text-[10px] font-medium text-emerald-100/95 normal-case">
                 {t('status_done')}
               </span>
             </div>
           ) : model.status === EQueueStatus.Processing ? (
             <div className="inline-flex max-w-full items-center gap-2 rounded-lg bg-brand/12 px-2.5 py-1">
               <Loader2 size={12} className="shrink-0 animate-spin text-brand-light" />
-              <span className="max-w-[7.5rem] truncate text-[10px] font-medium normal-case text-brand-light/95">
+              <span className="max-w-[7.5rem] truncate text-[10px] font-medium text-brand-light/95 normal-case">
                 {t('status_processing')}
               </span>
             </div>
           ) : (
             <div className="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-white/6 px-2 py-1">
               <Sparkles size={12} className="shrink-0 text-muted" strokeWidth={2} />
-              <span className="max-w-full truncate text-left text-[10px] font-medium normal-case text-muted">
+              <span className="max-w-full truncate text-left text-[10px] font-medium text-muted normal-case">
                 {t('status_ready')}
               </span>
             </div>

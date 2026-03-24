@@ -7,6 +7,7 @@ import { getPostCheckoutAbsoluteUrl } from '@/libs/i18n/postCheckoutRedirectUrl'
 
 /**
  * Client-safe absolute redirect URL after Clerk Billing checkout (locale-aware).
+ * @param path
  */
 export function usePostCheckoutAbsoluteUrl(path: string) {
   const locale = useLocale();

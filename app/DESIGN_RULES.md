@@ -52,30 +52,23 @@ src/components/
 
 ### `ui/` vs `common/`
 
-- **`ui/`** — Atomic components gốc, không có business logic cụ thể của app. Dùng được ở bất kỳ đâu.
-- **`common/`** — Components có tính business logic hoặc design tokens cụ thể của app này (marketing cards, section wrappers...). Các page sections nhỏ cũng nằm ở đây.
+- **`ui/`** — Atomic components, no app-specific business logic. Usable anywhere.
+- **`common/`** — Components with app-specific business logic or design tokens (marketing cards, section wrappers...). Small page sections also go here.
 
 ## Design Tokens (global.css)
 
 ### Colors
 ```css
---color-page: #09080f        /* Background chính */
---color-surface: #13111c      /* Card, panel */
---color-elevated: #1c1828     /* Modal, dropdown */
-
---color-brand: #8b5cf6        /* Violet chính */
---color-brand-light: #a78bfa  /* Violet sáng */
---color-accent: #d946ef       /* Fuchsia */
---color-accent-light: #f0abfc
-
---color-foreground: #ffffff    /* Headings */
---color-muted: #a1a1b5        /* Body text */
---color-subtle: #6b6b80       /* Hints, meta */
+--color-page: #09080f /* Main background */ --color-surface: #13111c /* Card, panel */
+  --color-elevated: #1c1828 /* Modal, dropdown */ --color-brand: #8b5cf6 /* Primary violet */
+  --color-brand-light: #a78bfa /* Light violet */ --color-accent: #d946ef /* Fuchsia */
+  --color-accent-light: #f0abfc --color-foreground: #ffffff /* Headings */ --color-muted: #a1a1b5
+  /* Body text */ --color-subtle: #6b6b80 /* Hints, meta */;
 ```
 
 ### Border Radius
 ```css
-rounded-[20px]   /* Card chính */
+rounded-[20px]   /* Main card */
 rounded-xl        /* Buttons, inputs */
 rounded-full      /* Pills, badges */
 ```
@@ -89,8 +82,8 @@ shadow-[0_12px_48px_rgba(0,0,0,0.5),0_0_30px_rgba(139,92,246,0.15)]  /* Card hov
 ### Gradients
 ```css
 --gradient-cta: linear-gradient(135deg, #7c3aed, #a855f7, #d946ef)
---gradient-brand: linear-gradient(135deg, #6d28d9, #8b5cf6, #a855f7)
---gradient-text: linear-gradient(90deg, #c4b5fd, #f0abfc)
+  --gradient-brand: linear-gradient(135deg, #6d28d9, #8b5cf6, #a855f7)
+  --gradient-text: linear-gradient(90deg, #c4b5fd, #f0abfc);
 ```
 
 ## Component Patterns
@@ -142,13 +135,13 @@ shadow-[0_12px_48px_rgba(0,0,0,0.5),0_0_30px_rgba(139,92,246,0.15)]  /* Card hov
 
 ## Usage Guidelines
 
-1. **Luôn dùng unified components** từ `common/index.tsx`:
+1. **Always use unified components** from `common/index.tsx`:
    - Layout: `Section`, `Container`
    - Text: `Badge`, `SectionHeader`, `GradientText`
    - Data: `StatsRow`, `Divider`
    - Decoratives: `GridOverlay`, `GlowBlob`
    - Cards: `TestimonialCard`, `FeatureCard`, `ToolCard`, `UseCaseCard`, `StepCard`, `Card`
-   - Icons: import trực tiếp từ `lucide-react` khi cần
+   - Icons: import directly from `lucide-react` when needed
 
 2. **Card hover effect**:
    ```tsx

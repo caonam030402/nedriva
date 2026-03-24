@@ -15,6 +15,7 @@ type Props = {
 
 /**
  * HeroUI accordion wrapper — FAQ / collapsible lists (project rule: no raw compound usage in features).
+ * @param props
  */
 export function FaqAccordion(props: Props) {
   return (

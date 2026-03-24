@@ -1,6 +1,6 @@
 import type { BillingPlan } from '@clerk/backend';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { BillingCatalogFeatureId } from '@/constants/billingCatalogFeatures';
+import type { BillingCatalogFeatureId } from '@/constants/billing/billingCatalogFeatures';
 import type * as schema from '@/models/Schema';
 import { randomUUID } from 'node:crypto';
 
@@ -9,9 +9,9 @@ import { eq } from 'drizzle-orm';
 import {
   catalogFeatureIdFromClerkFeatureSlug,
   PLAN_CATALOG_FEATURE_SEED,
-} from '@/constants/billingCatalogFeatures';
-import { resolveBillingPlanSlug } from '@/constants/billingPlanBenefits';
-import { PlanPayerType } from '@/constants/clerkPlanKeys';
+} from '@/constants/billing/billingCatalogFeatures';
+import { resolveBillingPlanSlug } from '@/constants/billing/billingPlanBenefits';
+import { PlanPayerType } from '@/constants/clerk/clerkPlanKeys';
 import { db } from '@/libs/core/DB';
 import { logger } from '@/libs/core/Logger';
 import { planBenefits, planCatalogFeatures, planFeatures, plans } from '@/models/Schema';
@@ -44,12 +44,14 @@ function planToSnapshot(plan: BillingPlan): Record<string, unknown> {
     isRecurring: plan.isRecurring,
     hasBaseFee: plan.hasBaseFee,
     publiclyVisible: plan.publiclyVisible,
-    features: (plan.features ?? []).map((f: { id: string; slug: string; name: string; description?: string | null }) => ({
-      id: f.id,
-      slug: f.slug,
-      name: f.name,
-      description: f.description,
-    })),
+    features: (plan.features ?? []).map(
+      (f: { id: string; slug: string; name: string; description?: string | null }) => ({
+        id: f.id,
+        slug: f.slug,
+        name: f.name,
+        description: f.description,
+      }),
+    ),
   };
 }
 

@@ -1,8 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useMemo } from 'react';
 import { Pagination as HeroPagination } from '@heroui/react/pagination';
+import { useMemo } from 'react';
 import { buildVisiblePageItems } from '@/utils/paginationVisiblePages';
 
 export type PaginationBarProps = {
@@ -20,6 +20,7 @@ export type PaginationBarProps = {
 
 /**
  * Controlled pagination built from HeroUI `Pagination` primitives (summary + page links + prev/next).
+ * @param props
  */
 export function PaginationBar(props: PaginationBarProps) {
   const {

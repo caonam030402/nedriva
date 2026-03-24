@@ -4,18 +4,18 @@
 import type { UserJSON } from '@clerk/backend';
 import type { User } from '@clerk/nextjs/server';
 import type { NewUserRow } from '@/models/Schema';
+import { currentUser } from '@clerk/nextjs/server';
+import { eq } from 'drizzle-orm';
+import { DEFAULT_NEW_USER_CREDIT_BALANCE } from '@/constants/billing/userCredits';
+import { db } from '@/libs/core/DB';
+import { logger } from '@/libs/core/Logger';
+import { ensureAffiliateRowForUser } from '@/libs/persistence/affiliates/ensureAffiliateRowForUser';
+import { newReferralCode } from '@/libs/persistence/users/referralCode';
+import { tryConsumePendingReferralCookie } from '@/libs/persistence/users/tryConsumePendingReferralCookie';
+import { users } from '@/models/Schema';
 
 /** Fields synced from Clerk; `referralCode` is generated on first insert only. */
 type ClerkUserUpsertBase = Omit<NewUserRow, 'referralCode'>;
-import { DEFAULT_NEW_USER_CREDIT_BALANCE } from '@/constants/userCredits';
-import { currentUser } from '@clerk/nextjs/server';
-import { eq } from 'drizzle-orm';
-import { db } from '@/libs/core/DB';
-import { logger } from '@/libs/core/Logger';
-import { newReferralCode } from '@/libs/persistence/users/referralCode';
-import { ensureAffiliateRowForUser } from '@/libs/persistence/affiliates/ensureAffiliateRowForUser';
-import { tryConsumePendingReferralCookie } from '@/libs/persistence/users/tryConsumePendingReferralCookie';
-import { users } from '@/models/Schema';
 
 /**
  * Avoid `undefined` in Drizzle values (Clerk JSON may omit fields).

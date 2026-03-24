@@ -1,9 +1,9 @@
 import type { BillingSubscriptionWebhookEvent } from '@clerk/backend';
-import type { SubscriptionCapabilities } from '@/constants/billingPlanBenefits';
+import type { SubscriptionCapabilities } from '@/constants/billing/billingPlanBenefits';
 import {
   fallbackMonthlyCreditAllowanceFromRawSlugs,
   FREE_SUBSCRIPTION_CAPABILITIES,
-} from '@/constants/billingPlanBenefits';
+} from '@/constants/billing/billingPlanBenefits';
 import { db } from '@/libs/core/DB';
 import { logger } from '@/libs/core/Logger';
 import {
@@ -76,40 +76,49 @@ export async function syncUserEntitlementsFromSubscription(data: SubscriptionDat
     caps = merged.caps;
     primaryPlanId = merged.primaryPlanId;
     if (
-      merged.effectivePayerType !== payerType
-      && slugs.length > 0
-      && caps.monthlyCreditAllowance > 0
+      merged.effectivePayerType !== payerType &&
+      slugs.length > 0 &&
+      caps.monthlyCreditAllowance > 0
     ) {
-      logger.info('Resolved subscription entitlements using alternate payer_type (Clerk payer mismatch)', {
-        subscriptionId: data.id,
-        userId,
-        webhookPayerType: payerType,
-        effectivePayerType: merged.effectivePayerType,
-        slugs,
-      });
+      logger.info(
+        'Resolved subscription entitlements using alternate payer_type (Clerk payer mismatch)',
+        {
+          subscriptionId: data.id,
+          userId,
+          webhookPayerType: payerType,
+          effectivePayerType: merged.effectivePayerType,
+          slugs,
+        },
+      );
     }
     if (slugs.length > 0 && caps.monthlyCreditAllowance === 0) {
       const fb = fallbackMonthlyCreditAllowanceFromRawSlugs(slugs);
       if (fb > 0) {
-        logger.info('Subscription entitlements: fallback monthly allowance from slug catalog (DB merge was 0)', {
-          subscriptionId: data.id,
-          userId,
-          slugs,
-          fallbackMonthlyCreditAllowance: fb,
-        });
+        logger.info(
+          'Subscription entitlements: fallback monthly allowance from slug catalog (DB merge was 0)',
+          {
+            subscriptionId: data.id,
+            userId,
+            slugs,
+            fallbackMonthlyCreditAllowance: fb,
+          },
+        );
         caps = { ...caps, monthlyCreditAllowance: fb };
       }
     }
   }
 
   if (shouldMergeEntitlements && slugs.length > 0 && caps.monthlyCreditAllowance === 0) {
-    logger.warn('Subscription with entitlements merge: no matching plans rows — check clerk_slug + payer_type + plan sync', {
-      slugs,
-      payerType,
-      subscriptionId: data.id,
-      userId,
-      status: data.status,
-    });
+    logger.warn(
+      'Subscription with entitlements merge: no matching plans rows — check clerk_slug + payer_type + plan sync',
+      {
+        slugs,
+        payerType,
+        subscriptionId: data.id,
+        userId,
+        status: data.status,
+      },
+    );
   }
 
   const row = capsToRow(
@@ -131,5 +140,4 @@ export async function syncUserEntitlementsFromSubscription(data: SubscriptionDat
         updatedAt: new Date(),
       },
     });
-
 }

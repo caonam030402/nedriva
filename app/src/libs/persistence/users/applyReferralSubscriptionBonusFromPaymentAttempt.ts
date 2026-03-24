@@ -1,6 +1,6 @@
 import type { BillingPaymentAttemptWebhookEvent } from '@clerk/backend';
 import { eq } from 'drizzle-orm';
-import { computeReferralSubscriptionBonusUsd } from '@/constants/billingPricing';
+import { computeReferralSubscriptionBonusUsd } from '@/constants/billing/billingPricing';
 import { REFERRAL_SUBSCRIPTION_BONUS_PERCENT } from '@/constants/referral';
 import { db } from '@/libs/core/DB';
 import { logger } from '@/libs/core/Logger';
@@ -60,7 +60,10 @@ export async function applyReferralSubscriptionBonusFromPaymentAttempt(
   // Convert cents to USD
   const paidUsd = grandTotalAmount / 100;
 
-  const bonusUsd = computeReferralSubscriptionBonusUsd(paidUsd, REFERRAL_SUBSCRIPTION_BONUS_PERCENT);
+  const bonusUsd = computeReferralSubscriptionBonusUsd(
+    paidUsd,
+    REFERRAL_SUBSCRIPTION_BONUS_PERCENT,
+  );
   if (!(bonusUsd > 0)) {
     return;
   }

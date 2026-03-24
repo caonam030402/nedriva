@@ -3,7 +3,7 @@
  * (e.g. public R2 URL). Fetch → blob → object URL forces a real download when CORS allows it.
  *
  * If direct fetch fails (common when R2 CORS is tight), falls back to same-origin
- * `GET /api/enhancer/storage-download` (server fetches storage; no new tab).
+ * `GET /api/enhancer-image/storage-download` (server fetches storage; no new tab).
  */
 import { apiRoutes } from '@/constants/apiRoutes';
 
@@ -59,7 +59,7 @@ export async function downloadUrlAsFile(
 
   try {
     const proxyUrl
-      = `${apiRoutes.enhancerStorageDownload}?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+      = `${apiRoutes.enhancerImage.storageDownload}?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
     const res = await fetch(proxyUrl, { credentials: 'include', cache: 'no-store' });
     if (!res.ok) {
       throw new Error(`Proxy HTTP ${res.status}`);

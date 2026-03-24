@@ -1,7 +1,7 @@
 'use client';
 
 import type { EMoreModel, ESizeMode } from '@/enums/enhancer-image';
-import type { OpsState } from '@/types/enhancer';
+import type { OpsState } from '@/types/enhancer-image/state';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -20,7 +20,7 @@ import {
   buildRenderConfig,
   SCALE_FACTORS,
   UPSCALE_MODELS,
-} from '../../../../constants/enhancerImage';
+} from '../../../../constants/enhancer-image/enhancerImage';
 
 /* ── Section ─────────────────────────────────────────────────── */
 
